@@ -123,8 +123,8 @@ func TestDatabase(t *testing.T) {
 		Id:                  "foo_id_5",
 		MsgVersion:          1,
 		ExternalTaskId:      "task_id_5",
-		ProcessInstanceId:   "piid_5",
-		ProcessDefinitionId: "pdid_5",
+		ProcessInstanceId:   "a",
+		ProcessDefinitionId: "x",
 		WorkerId:            "w",
 		ErrorMessage:        "error message",
 		Time:                time.Now(),
@@ -164,5 +164,34 @@ func TestDatabase(t *testing.T) {
 
 	t.Run("by pdid", func(t *testing.T) {
 		checkIncidentsByPdid(t, config, "foobar", []messages.IncidentMessage{})
+	})
+
+	t.Run("limit offset", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "2", "1", "id", []messages.IncidentMessage{incident2, incident3})
+	})
+
+	t.Run("limit offset", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "2", "1", "id.asc", []messages.IncidentMessage{incident2, incident3})
+	})
+
+	t.Run("limit offset", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "2", "1", "id.desc", []messages.IncidentMessage{incident4, incident3})
+	})
+
+	t.Run("sort", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "100", "0", "id", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
+	})
+	t.Run("sort", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "100", "0", "external_task_id", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
+	})
+	t.Run("sort", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "100", "0", "process_instance_id", []messages.IncidentMessage{incident5, incident1, incident2, incident3, incident4})
+	})
+	t.Run("sort", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "100", "0", "process_definition_id", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
+	})
+
+	t.Run("sort", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "100", "0", "id.desc", []messages.IncidentMessage{incident5, incident4, incident3, incident2, incident1})
 	})
 }
