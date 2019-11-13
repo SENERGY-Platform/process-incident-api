@@ -28,31 +28,7 @@ import (
 	"time"
 )
 
-func TestInit(t *testing.T) {
-	defaultConfig, err := configuration.LoadConfig("../config.json")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	err = lib.StartWith(ctx, config, api.Factory, database.Factory)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-}
-
-func TestDatabase(t *testing.T) {
+func Test(t *testing.T) {
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)

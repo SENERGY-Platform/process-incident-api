@@ -27,7 +27,7 @@ import (
 	"log"
 )
 
-func (this *Mongo) GetIncidents(id string) (incident messages.IncidentMessage, exists bool, err error) {
+func (this *mongoclient) GetIncidents(id string) (incident messages.IncidentMessage, exists bool, err error) {
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 	result := this.collection().FindOne(ctx, bson.M{"id": id})
 	err = errors.WithStack(result.Err())
@@ -41,7 +41,7 @@ func (this *Mongo) GetIncidents(id string) (incident messages.IncidentMessage, e
 	return incident, true, errors.WithStack(err)
 }
 
-func (this *Mongo) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortby string, asc bool) (incidents []messages.IncidentMessage, err error) {
+func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortby string, asc bool) (incidents []messages.IncidentMessage, err error) {
 	if this.config.Debug {
 		log.Println("DEBUG: FindIncidents()", externalTaskId, processDefinitionId, processInstanceId)
 	}

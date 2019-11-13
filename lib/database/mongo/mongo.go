@@ -23,32 +23,78 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"time"
 )
 
 const TIMEOUT = 2 * time.Second
 
-type Mongo struct {
+type mongoclient struct {
 	config configuration.Config
 	client *mongo.Client
 }
 
-func New(ctx context.Context, config configuration.Config) (result *Mongo, err error) {
-	result = &Mongo{config: config}
+func New(ctx context.Context, config configuration.Config) (result *mongoclient, err error) {
+	result = &mongoclient{config: config}
+	ctx, cancel := context.WithCancel(ctx)
 	result.client, err = mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
 		err = errors.WithStack(err)
-		return
+		return nil, err
 	}
+	go func() {
+		<-ctx.Done()
+		disconnectCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+		result.client.Disconnect(disconnectCtx)
+	}()
 	ctx, _ = context.WithTimeout(context.Background(), TIMEOUT)
 	err = result.client.Ping(ctx, readpref.Primary())
 	if err != nil {
+		cancel()
 		err = errors.WithStack(err)
-		return
+		return nil, err
 	}
-	return
+	err = result.init()
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	return result, nil
 }
 
-func (this *Mongo) collection() *mongo.Collection {
+func (this *mongoclient) init() error {
+	err := this.ensureIndex(this.collection(), "id_index", "id", true, true)
+	if err != nil {
+		return err
+	}
+	err = this.ensureIndex(this.collection(), "external_task_id_index", "external_task_id", true, false)
+	if err != nil {
+		return err
+	}
+	err = this.ensureIndex(this.collection(), "process_instance_id_index", "process_instance_id", true, false)
+	if err != nil {
+		return err
+	}
+	err = this.ensureIndex(this.collection(), "process_definition_id_index", "process_definition_id", true, false)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (this *mongoclient) ensureIndex(collection *mongo.Collection, indexname string, indexKey string, asc bool, unique bool) error {
+	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	var direction int32 = -1
+	if asc {
+		direction = 1
+	}
+	_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bsonx.Doc{{indexKey, bsonx.Int32(direction)}},
+		Options: options.Index().SetName(indexname).SetUnique(unique),
+	})
+	return errors.WithStack(err)
+}
+
+func (this *mongoclient) collection() *mongo.Collection {
 	return this.client.Database(this.config.MongoDatabaseName).Collection(this.config.MongoIncidentCollectionName)
 }
