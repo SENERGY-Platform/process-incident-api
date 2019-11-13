@@ -35,8 +35,8 @@ func (this *Controller) GetIncident(id string) (incident messages.IncidentMessag
 	return incident, nil, http.StatusOK
 }
 
-func (this *Controller) FindIncidents(processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool) (incidents []messages.IncidentMessage, err error) {
-	incidents, err = this.db.FindIncidents(processDefinitionId, processInstanceId, limit, offset, sortBy, asc)
+func (this *Controller) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool) (incidents []messages.IncidentMessage, err error) {
+	incidents, err = this.db.FindIncidents(externalTaskId, processDefinitionId, processInstanceId, limit, offset, sortBy, asc)
 	if err != nil {
 		log.Printf("ERROR: %+v \n", err) //prints error with stack trace if error is from github.com/pkg/errors
 		err = errors.New("database error")

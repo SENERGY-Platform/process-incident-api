@@ -1,8 +1,8 @@
 {
   "api_port": "8080",
   "api_log": true,
-  "camunda_url":"http://camunda:8080",
   "mongo_url":"mongodb://localhost:27017",
   "mongo_database_name":"incidents",
-  "mongo_incident_collection_name":"incidents"
+  "mongo_incident_collection_name":"incidents",
+  "debug": false
 }

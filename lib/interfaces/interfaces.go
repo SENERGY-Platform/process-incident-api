@@ -24,12 +24,12 @@ import (
 
 type Controller interface {
 	GetIncident(id string) (incident messages.IncidentMessage, err error, errCode int)
-	FindIncidents(processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool) (incidents []messages.IncidentMessage, err error)
+	FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool) (incidents []messages.IncidentMessage, err error)
 }
 
 type Database interface {
 	GetIncidents(id string) (incident messages.IncidentMessage, exists bool, err error)
-	FindIncidents(processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool) (incidents []messages.IncidentMessage, err error)
+	FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool) (incidents []messages.IncidentMessage, err error)
 }
 
 type DatabaseFactory interface {

@@ -21,6 +21,7 @@ import (
 	"github.com/SENERGY-Platform/incident-api/lib/api/util"
 	"github.com/SENERGY-Platform/incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/incident-api/lib/messages"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -60,6 +61,7 @@ func DeviceEndpoints(config configuration.Config, ctrl interfaces.Controller, ro
 	router.GET(resource, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		processDefinitionId := request.URL.Query().Get("process_definition_id")
 		processInstanceId := request.URL.Query().Get("process_instance_id")
+		taskId := request.URL.Query().Get("external_task_id")
 
 		limit, err := util.ParseLimit(request.URL.Query().Get("limit"))
 		if err != nil {
@@ -77,10 +79,13 @@ func DeviceEndpoints(config configuration.Config, ctrl interfaces.Controller, ro
 			return
 		}
 
-		incidents, err := ctrl.FindIncidents(processDefinitionId, processInstanceId, limit, offset, sortField, sortAsc)
+		incidents, err := ctrl.FindIncidents(taskId, processDefinitionId, processInstanceId, limit, offset, sortField, sortAsc)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if incidents == nil {
+			incidents = []messages.IncidentMessage{} //ensure json is '[]' and not 'null'
 		}
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		err = json.NewEncoder(writer).Encode(incidents)

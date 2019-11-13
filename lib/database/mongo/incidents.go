@@ -24,6 +24,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
+	"log"
 )
 
 func (this *Mongo) GetIncidents(id string) (incident messages.IncidentMessage, exists bool, err error) {
@@ -40,13 +41,22 @@ func (this *Mongo) GetIncidents(id string) (incident messages.IncidentMessage, e
 	return incident, true, errors.WithStack(err)
 }
 
-func (this *Mongo) FindIncidents(processDefinitionId string, processInstanceId string, limit int, offset int, sortby string, asc bool) (incidents []messages.IncidentMessage, err error) {
+func (this *Mongo) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortby string, asc bool) (incidents []messages.IncidentMessage, err error) {
+	if this.config.Debug {
+		log.Println("DEBUG: FindIncidents()", externalTaskId, processDefinitionId, processInstanceId)
+	}
 	filter := bson.M{}
-	if processInstanceId != "" {
+	if processDefinitionId != "" {
 		filter["process_definition_id"] = processDefinitionId
 	}
 	if processInstanceId != "" {
 		filter["process_instance_id"] = processInstanceId
+	}
+	if externalTaskId != "" {
+		filter["external_task_id"] = externalTaskId
+	}
+	if this.config.Debug {
+		log.Println("DEBUG: FindIncidents() filter = ", filter)
 	}
 
 	direction := int32(1)

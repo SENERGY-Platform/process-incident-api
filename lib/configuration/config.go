@@ -28,12 +28,12 @@ import (
 )
 
 type Config struct {
-	CamundaUrl                  string `json:"camunda_url"`
 	MongoUrl                    string `json:"mongo_url"`
 	MongoDatabaseName           string `json:"mongo_database_name"`
 	MongoIncidentCollectionName string `json:"mongo_incident_collection_name"`
 	ApiPort                     string `json:"api_port"`
 	ApiLog                      bool   `json:"api_log"`
+	Debug                       bool   `json:"debug"`
 }
 
 //loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)
