@@ -49,8 +49,8 @@ func New(ctx context.Context, config configuration.Config) (result *mongoclient,
 		disconnectCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 		result.client.Disconnect(disconnectCtx)
 	}()
-	ctx, _ = context.WithTimeout(context.Background(), TIMEOUT)
-	err = result.client.Ping(ctx, readpref.Primary())
+	pingCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	err = result.client.Ping(pingCtx, readpref.Primary())
 	if err != nil {
 		cancel()
 		err = errors.WithStack(err)
