@@ -24,6 +24,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/x/bsonx"
+	"log"
 	"time"
 )
 
@@ -44,6 +45,7 @@ func New(ctx context.Context, config configuration.Config) (result *mongoclient,
 	}
 	go func() {
 		<-ctx.Done()
+		log.Println("disconnect mongodb")
 		disconnectCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 		result.client.Disconnect(disconnectCtx)
 	}()
