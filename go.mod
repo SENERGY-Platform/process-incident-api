@@ -1,4 +1,4 @@
-module github.com/SENERGY-Platform/incident-api
+module github.com/SENERGY-Platform/process-incident-api
 
 go 1.13
 

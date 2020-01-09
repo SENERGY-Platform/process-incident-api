@@ -18,7 +18,7 @@ package controller
 
 import (
 	"errors"
-	"github.com/SENERGY-Platform/incident-api/lib/messages"
+	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"log"
 	"net/http"
 )

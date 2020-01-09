@@ -19,8 +19,8 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/SENERGY-Platform/incident-api/lib"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"log"
 	"os"
 	"os/signal"

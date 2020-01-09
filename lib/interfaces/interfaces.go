@@ -18,8 +18,8 @@ package interfaces
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/incident-api/lib/messages"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 )
 
 type Controller interface {

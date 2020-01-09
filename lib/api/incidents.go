@@ -18,10 +18,10 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/SENERGY-Platform/incident-api/lib/api/util"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/incident-api/lib/interfaces"
-	"github.com/SENERGY-Platform/incident-api/lib/messages"
+	"github.com/SENERGY-Platform/process-incident-api/lib/api/util"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"

@@ -18,12 +18,12 @@ package tests
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-api/lib"
-	"github.com/SENERGY-Platform/incident-api/lib/api"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/incident-api/lib/database"
-	"github.com/SENERGY-Platform/incident-api/lib/messages"
-	"github.com/SENERGY-Platform/incident-api/tests/server"
+	"github.com/SENERGY-Platform/process-incident-api/lib"
+	"github.com/SENERGY-Platform/process-incident-api/lib/api"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/database"
+	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
+	"github.com/SENERGY-Platform/process-incident-api/tests/server"
 	"testing"
 	"time"
 )

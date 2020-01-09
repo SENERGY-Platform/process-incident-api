@@ -19,9 +19,9 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/SENERGY-Platform/incident-api/lib/api/util"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-api/lib/api/util"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"log"

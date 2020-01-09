@@ -18,7 +18,7 @@ package mongo
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

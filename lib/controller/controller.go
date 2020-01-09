@@ -18,8 +18,8 @@ package controller
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
 )
 
 type Controller struct {

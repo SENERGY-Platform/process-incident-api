@@ -18,8 +18,8 @@ package tests
 
 import (
 	"encoding/json"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/incident-api/lib/messages"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"io/ioutil"
 	"net/http"
 	"net/url"

@@ -18,7 +18,7 @@ package server
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"log"

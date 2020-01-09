@@ -18,11 +18,11 @@ package lib
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-api/lib/api"
-	"github.com/SENERGY-Platform/incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/incident-api/lib/controller"
-	"github.com/SENERGY-Platform/incident-api/lib/database"
-	"github.com/SENERGY-Platform/incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-api/lib/api"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/controller"
+	"github.com/SENERGY-Platform/process-incident-api/lib/database"
+	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
 )
 
 func Start(ctx context.Context, config configuration.Config) (err error) {
