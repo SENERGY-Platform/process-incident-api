@@ -81,6 +81,10 @@ func (this *mongoclient) init() error {
 	if err != nil {
 		return err
 	}
+	err = this.ensureIndex(this.collection(), "tenant_id_index", "tenant_id", true, false)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -27,4 +27,5 @@ type IncidentMessage struct {
 	WorkerId            string    `json:"worker_id" bson:"worker_id"`
 	ErrorMessage        string    `json:"error_message" bson:"error_message"`
 	Time                time.Time `json:"time" bson:"time"`
+	TenantId            string    `json:"tenant_id" bson:"tenant_id"`
 }

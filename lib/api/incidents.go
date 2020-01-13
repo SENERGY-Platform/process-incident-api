@@ -36,8 +36,9 @@ func DeviceEndpoints(config configuration.Config, ctrl interfaces.Controller, ro
 	resource := "/incidents"
 
 	router.GET(resource+"/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		user := request.Header.Get("X-UserID")
 		id := params.ByName("id")
-		incident, err, code := ctrl.GetIncident(id)
+		incident, err, code := ctrl.GetIncident(id, user)
 		if err != nil {
 			http.Error(writer, err.Error(), code)
 			return
@@ -59,6 +60,7 @@ func DeviceEndpoints(config configuration.Config, ctrl interfaces.Controller, ro
 				- sort
 	*/
 	router.GET(resource, func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		user := request.Header.Get("X-UserID")
 		processDefinitionId := request.URL.Query().Get("process_definition_id")
 		processInstanceId := request.URL.Query().Get("process_instance_id")
 		taskId := request.URL.Query().Get("external_task_id")
@@ -79,7 +81,7 @@ func DeviceEndpoints(config configuration.Config, ctrl interfaces.Controller, ro
 			return
 		}
 
-		incidents, err := ctrl.FindIncidents(taskId, processDefinitionId, processInstanceId, limit, offset, sortField, sortAsc)
+		incidents, err := ctrl.FindIncidents(taskId, processDefinitionId, processInstanceId, limit, offset, sortField, sortAsc, user)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return

@@ -27,9 +27,9 @@ import (
 	"log"
 )
 
-func (this *mongoclient) GetIncidents(id string) (incident messages.IncidentMessage, exists bool, err error) {
+func (this *mongoclient) GetIncidents(id string, user string) (incident messages.IncidentMessage, exists bool, err error) {
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	result := this.collection().FindOne(ctx, bson.M{"id": id})
+	result := this.collection().FindOne(ctx, bson.M{"id": id, "tenant_id": user})
 	err = errors.WithStack(result.Err())
 	if err != nil {
 		return incident, exists, err
@@ -41,11 +41,11 @@ func (this *mongoclient) GetIncidents(id string) (incident messages.IncidentMess
 	return incident, true, errors.WithStack(err)
 }
 
-func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortby string, asc bool) (incidents []messages.IncidentMessage, err error) {
+func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortby string, asc bool, user string) (incidents []messages.IncidentMessage, err error) {
 	if this.config.Debug {
 		log.Println("DEBUG: FindIncidents()", externalTaskId, processDefinitionId, processInstanceId)
 	}
-	filter := bson.M{}
+	filter := bson.M{"tenant_id": user}
 	if processDefinitionId != "" {
 		filter["process_definition_id"] = processDefinitionId
 	}

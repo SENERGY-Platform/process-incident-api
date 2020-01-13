@@ -60,6 +60,7 @@ func Test(t *testing.T) {
 		WorkerId:            "w",
 		ErrorMessage:        "error message",
 		Time:                time.Now(),
+		TenantId:            "user",
 	}
 
 	incident2 := messages.IncidentMessage{
@@ -71,6 +72,7 @@ func Test(t *testing.T) {
 		WorkerId:            "w",
 		ErrorMessage:        "error message",
 		Time:                time.Now(),
+		TenantId:            "user",
 	}
 
 	incident3 := messages.IncidentMessage{
@@ -82,6 +84,7 @@ func Test(t *testing.T) {
 		WorkerId:            "w",
 		ErrorMessage:        "error message",
 		Time:                time.Now(),
+		TenantId:            "user",
 	}
 
 	incident4 := messages.IncidentMessage{
@@ -93,6 +96,7 @@ func Test(t *testing.T) {
 		WorkerId:            "w",
 		ErrorMessage:        "error message",
 		Time:                time.Now(),
+		TenantId:            "user",
 	}
 
 	incident5 := messages.IncidentMessage{
@@ -104,6 +108,7 @@ func Test(t *testing.T) {
 		WorkerId:            "w",
 		ErrorMessage:        "error message",
 		Time:                time.Now(),
+		TenantId:            "user",
 	}
 
 	t.Run("create incidents", func(t *testing.T) {
@@ -111,63 +116,63 @@ func Test(t *testing.T) {
 	})
 
 	t.Run("by id", func(t *testing.T) {
-		checkIncidentById(t, config, "foo_id_1", incident1)
+		checkIncidentById(t, config, "foo_id_1", "user", incident1)
 	})
 
 	t.Run("by task id", func(t *testing.T) {
-		checkIncidentsByTaskId(t, config, "foobar", []messages.IncidentMessage{})
+		checkIncidentsByTaskId(t, config, "foobar", "user", []messages.IncidentMessage{})
 	})
 
 	t.Run("by task id", func(t *testing.T) {
-		checkIncidentsByTaskId(t, config, "task_id_1", []messages.IncidentMessage{incident1})
+		checkIncidentsByTaskId(t, config, "task_id_1", "user", []messages.IncidentMessage{incident1})
 	})
 
 	t.Run("by task id", func(t *testing.T) {
-		checkIncidentsByTaskId(t, config, "task_id_3", []messages.IncidentMessage{incident3, incident4})
+		checkIncidentsByTaskId(t, config, "task_id_3", "user", []messages.IncidentMessage{incident3, incident4})
 	})
 
 	t.Run("by piid", func(t *testing.T) {
-		checkIncidentsByPiid(t, config, "foobar", []messages.IncidentMessage{})
+		checkIncidentsByPiid(t, config, "foobar", "user", []messages.IncidentMessage{})
 	})
 
 	t.Run("by piid", func(t *testing.T) {
-		checkIncidentsByPiid(t, config, "piid_1", []messages.IncidentMessage{incident1, incident2})
+		checkIncidentsByPiid(t, config, "piid_1", "user", []messages.IncidentMessage{incident1, incident2})
 	})
 
 	t.Run("by pdid", func(t *testing.T) {
-		checkIncidentsByPdid(t, config, "pdid_1", []messages.IncidentMessage{incident1, incident2})
+		checkIncidentsByPdid(t, config, "pdid_1", "user", []messages.IncidentMessage{incident1, incident2})
 	})
 
 	t.Run("by pdid", func(t *testing.T) {
-		checkIncidentsByPdid(t, config, "foobar", []messages.IncidentMessage{})
+		checkIncidentsByPdid(t, config, "foobar", "user", []messages.IncidentMessage{})
 	})
 
 	t.Run("limit offset", func(t *testing.T) {
-		checkApiLimitAndSort(t, config, "2", "1", "id", []messages.IncidentMessage{incident2, incident3})
+		checkApiLimitAndSort(t, config, "2", "1", "id", "user", []messages.IncidentMessage{incident2, incident3})
 	})
 
 	t.Run("limit offset", func(t *testing.T) {
-		checkApiLimitAndSort(t, config, "2", "1", "id.asc", []messages.IncidentMessage{incident2, incident3})
+		checkApiLimitAndSort(t, config, "2", "1", "id.asc", "user", []messages.IncidentMessage{incident2, incident3})
 	})
 
 	t.Run("limit offset", func(t *testing.T) {
-		checkApiLimitAndSort(t, config, "2", "1", "id.desc", []messages.IncidentMessage{incident4, incident3})
+		checkApiLimitAndSort(t, config, "2", "1", "id.desc", "user", []messages.IncidentMessage{incident4, incident3})
 	})
 
 	t.Run("sort", func(t *testing.T) {
-		checkApiLimitAndSort(t, config, "100", "0", "id", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
+		checkApiLimitAndSort(t, config, "100", "0", "id", "user", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
 	})
 	t.Run("sort", func(t *testing.T) {
-		checkApiLimitAndSort(t, config, "100", "0", "external_task_id", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
+		checkApiLimitAndSort(t, config, "100", "0", "external_task_id", "user", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
 	})
 	t.Run("sort", func(t *testing.T) {
-		checkApiLimitAndSort(t, config, "100", "0", "process_instance_id", []messages.IncidentMessage{incident5, incident1, incident2, incident3, incident4})
+		checkApiLimitAndSort(t, config, "100", "0", "process_instance_id", "user", []messages.IncidentMessage{incident5, incident1, incident2, incident3, incident4})
 	})
 	t.Run("sort", func(t *testing.T) {
-		checkApiLimitAndSort(t, config, "100", "0", "process_definition_id", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
+		checkApiLimitAndSort(t, config, "100", "0", "process_definition_id", "user", []messages.IncidentMessage{incident1, incident2, incident3, incident4, incident5})
 	})
 
 	t.Run("sort", func(t *testing.T) {
-		checkApiLimitAndSort(t, config, "100", "0", "id.desc", []messages.IncidentMessage{incident5, incident4, incident3, incident2, incident1})
+		checkApiLimitAndSort(t, config, "100", "0", "id.desc", "user", []messages.IncidentMessage{incident5, incident4, incident3, incident2, incident1})
 	})
 }

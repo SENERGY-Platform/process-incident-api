@@ -29,25 +29,26 @@ import (
 	"time"
 )
 
-func checkIncidentsByPdid(t *testing.T, config configuration.Config, processDefinitionId string, expected []messages.IncidentMessage) {
-	checkApiListFilter(t, config, "process_definition_id="+url.QueryEscape(processDefinitionId), expected)
+func checkIncidentsByPdid(t *testing.T, config configuration.Config, processDefinitionId string, user string, expected []messages.IncidentMessage) {
+	checkApiListFilter(t, config, "process_definition_id="+url.QueryEscape(processDefinitionId), user, expected)
 }
 
-func checkIncidentsByPiid(t *testing.T, config configuration.Config, processInstanceId string, expected []messages.IncidentMessage) {
-	checkApiListFilter(t, config, "process_instance_id="+url.QueryEscape(processInstanceId), expected)
+func checkIncidentsByPiid(t *testing.T, config configuration.Config, processInstanceId string, user string, expected []messages.IncidentMessage) {
+	checkApiListFilter(t, config, "process_instance_id="+url.QueryEscape(processInstanceId), user, expected)
 }
 
-func checkIncidentsByTaskId(t *testing.T, config configuration.Config, taskId string, expected []messages.IncidentMessage) {
-	checkApiListFilter(t, config, "external_task_id="+url.QueryEscape(taskId), expected)
+func checkIncidentsByTaskId(t *testing.T, config configuration.Config, taskId string, user string, expected []messages.IncidentMessage) {
+	checkApiListFilter(t, config, "external_task_id="+url.QueryEscape(taskId), user, expected)
 }
 
-func checkIncidentById(t *testing.T, config configuration.Config, id string, expected messages.IncidentMessage) {
+func checkIncidentById(t *testing.T, config configuration.Config, id string, user string, expected messages.IncidentMessage) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	request, err := http.NewRequest("GET", "http://localhost:"+config.ApiPort+"/incidents/"+url.PathEscape(id), nil)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
+	request.Header.Add("X-UserID", user)
 	resp, err := client.Do(request)
 	if err != nil {
 		t.Fatal(err)
@@ -75,13 +76,14 @@ func checkIncidentById(t *testing.T, config configuration.Config, id string, exp
 	}
 }
 
-func checkApiLimitAndSort(t *testing.T, config configuration.Config, limit string, offset string, sort string, expected []messages.IncidentMessage) {
+func checkApiLimitAndSort(t *testing.T, config configuration.Config, limit string, offset string, sort string, user string, expected []messages.IncidentMessage) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	request, err := http.NewRequest("GET", "http://localhost:"+config.ApiPort+"/incidents?limit="+url.QueryEscape(limit)+"&offset="+url.QueryEscape(offset)+"&sort="+url.QueryEscape(sort), nil)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
+	request.Header.Add("X-UserID", user)
 	resp, err := client.Do(request)
 	if err != nil {
 		t.Fatal(err)
@@ -116,13 +118,14 @@ func checkApiLimitAndSort(t *testing.T, config configuration.Config, limit strin
 	}
 }
 
-func checkApiListFilter(t *testing.T, config configuration.Config, query string, expected []messages.IncidentMessage) {
+func checkApiListFilter(t *testing.T, config configuration.Config, query string, user string, expected []messages.IncidentMessage) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	request, err := http.NewRequest("GET", "http://localhost:"+config.ApiPort+"/incidents?"+query, nil)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
+	request.Header.Add("X-UserID", user)
 	resp, err := client.Do(request)
 	if err != nil {
 		t.Fatal(err)
