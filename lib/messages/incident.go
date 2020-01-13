@@ -28,4 +28,5 @@ type IncidentMessage struct {
 	ErrorMessage        string    `json:"error_message" bson:"error_message"`
 	Time                time.Time `json:"time" bson:"time"`
 	TenantId            string    `json:"tenant_id" bson:"tenant_id"`
+	DeploymentName      string    `json:"deployment_name" bson:"deployment_name"`
 }
