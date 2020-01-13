@@ -85,6 +85,10 @@ func (this *mongoclient) init() error {
 	if err != nil {
 		return err
 	}
+	err = this.ensureIndex(this.collection(), "time_index", "time", true, false)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

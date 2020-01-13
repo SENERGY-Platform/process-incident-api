@@ -176,3 +176,78 @@ func Test(t *testing.T) {
 		checkApiLimitAndSort(t, config, "100", "0", "id.desc", "user", []messages.IncidentMessage{incident5, incident4, incident3, incident2, incident1})
 	})
 }
+
+func TestTimeSort(t *testing.T) {
+	defaultConfig, err := configuration.LoadConfig("../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer time.Sleep(10 * time.Second) //wait for docker cleanup
+	defer cancel()
+
+	config, err := server.New(ctx, defaultConfig)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = lib.StartWith(ctx, config, api.Factory, database.Factory)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	now, _ := time.Parse(time.RFC3339, "2020-01-10T12:00:00Z00:00")
+
+	incident1 := messages.IncidentMessage{
+		Id:                  "a",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id_1",
+		ProcessInstanceId:   "piid_1",
+		ProcessDefinitionId: "pdid_1",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                now,
+		TenantId:            "user",
+	}
+
+	incident2 := messages.IncidentMessage{
+		Id:                  "b",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id_1",
+		ProcessInstanceId:   "piid_1",
+		ProcessDefinitionId: "pdid_1",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                now.Add(3 * time.Hour),
+		TenantId:            "user",
+	}
+
+	incident3 := messages.IncidentMessage{
+		Id:                  "c",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id_1",
+		ProcessInstanceId:   "piid_1",
+		ProcessDefinitionId: "pdid_1",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                now.Add(1 * time.Hour),
+		TenantId:            "user",
+	}
+
+	t.Run("create incidents", func(t *testing.T) {
+		createTestIncidents(t, config, []messages.IncidentMessage{incident1, incident2, incident3})
+	})
+	t.Run("sort time", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "100", "0", "time", "user", []messages.IncidentMessage{incident1, incident3, incident2})
+	})
+	t.Run("sort time.asc", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "100", "0", "time.asc", "user", []messages.IncidentMessage{incident1, incident3, incident2})
+	})
+	t.Run("sort time.desc", func(t *testing.T) {
+		checkApiLimitAndSort(t, config, "100", "0", "time.desc", "user", []messages.IncidentMessage{incident2, incident3, incident1})
+	})
+}

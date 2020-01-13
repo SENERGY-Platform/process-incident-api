@@ -75,7 +75,7 @@ func DeviceEndpoints(config configuration.Config, ctrl interfaces.Controller, ro
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		sortField, sortAsc, err := util.ParseSort(request.URL.Query().Get("sort"), []string{"id", "external_task_id", "process_instance_id", "process_definition_id"})
+		sortField, sortAsc, err := util.ParseSort(request.URL.Query().Get("sort"), []string{"id", "external_task_id", "process_instance_id", "process_definition_id", "time"})
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
