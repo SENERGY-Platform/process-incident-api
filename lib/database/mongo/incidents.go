@@ -30,6 +30,9 @@ import (
 func (this *mongoclient) GetIncidents(id string, user string) (incident messages.IncidentMessage, exists bool, err error) {
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 	result := this.collection().FindOne(ctx, bson.M{"id": id, "tenant_id": user})
+	if err == mongo.ErrNoDocuments {
+		return incident, false, nil
+	}
 	err = errors.WithStack(result.Err())
 	if err != nil {
 		return incident, exists, err
