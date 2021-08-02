@@ -1,6 +1,6 @@
 module github.com/SENERGY-Platform/process-incident-api
 
-go 1.13
+go 1.16
 
 require (
 	github.com/go-stack/stack v1.8.0 // indirect
