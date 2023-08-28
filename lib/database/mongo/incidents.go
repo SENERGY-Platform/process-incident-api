@@ -19,11 +19,9 @@ package mongo
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
-	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"log"
 )
 
@@ -33,7 +31,7 @@ func (this *mongoclient) GetIncidents(id string, user string) (incident messages
 	if err == mongo.ErrNoDocuments {
 		return incident, false, nil
 	}
-	err = errors.WithStack(result.Err())
+	err = result.Err()
 	if err != nil {
 		return incident, exists, err
 	}
@@ -41,7 +39,7 @@ func (this *mongoclient) GetIncidents(id string, user string) (incident messages
 	if err == mongo.ErrNoDocuments {
 		return incident, false, nil
 	}
-	return incident, true, errors.WithStack(err)
+	return incident, true, err
 }
 
 func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortby string, asc bool, user string) (incidents []messages.IncidentMessage, err error) {
@@ -70,23 +68,21 @@ func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionI
 	option := options.Find().
 		SetSkip(int64(offset)).
 		SetLimit(int64(limit)).
-		SetSort(bsonx.Doc{
-			{sortby, bsonx.Int32(direction)},
-		})
+		SetSort(bson.D{{sortby, direction}})
 
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 	cursor, err := this.collection().Find(ctx, filter, option)
 	if err != nil {
-		return incidents, errors.WithStack(err)
+		return incidents, err
 	}
 	for cursor.Next(context.Background()) {
 		incident := messages.IncidentMessage{}
 		err = cursor.Decode(&incident)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, err
 		}
 		incidents = append(incidents, incident)
 	}
 	err = cursor.Err()
-	return incidents, errors.WithStack(err)
+	return incidents, err
 }

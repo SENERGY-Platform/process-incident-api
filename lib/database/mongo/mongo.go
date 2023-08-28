@@ -19,11 +19,10 @@ package mongo
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
-	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"log"
 	"time"
 )
@@ -40,7 +39,6 @@ func New(ctx context.Context, config configuration.Config) (result *mongoclient,
 	ctx, cancel := context.WithCancel(ctx)
 	result.client, err = mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
-		err = errors.WithStack(err)
 		return nil, err
 	}
 	go func() {
@@ -53,7 +51,6 @@ func New(ctx context.Context, config configuration.Config) (result *mongoclient,
 	err = result.client.Ping(pingCtx, readpref.Primary())
 	if err != nil {
 		cancel()
-		err = errors.WithStack(err)
 		return nil, err
 	}
 	err = result.init()
@@ -99,10 +96,10 @@ func (this *mongoclient) ensureIndex(collection *mongo.Collection, indexname str
 		direction = 1
 	}
 	_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bsonx.Doc{{indexKey, bsonx.Int32(direction)}},
+		Keys:    bson.D{{indexKey, direction}},
 		Options: options.Index().SetName(indexname).SetUnique(unique),
 	})
-	return errors.WithStack(err)
+	return err
 }
 
 func (this *mongoclient) collection() *mongo.Collection {

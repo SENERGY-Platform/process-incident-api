@@ -20,7 +20,6 @@ import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
-	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -38,7 +37,6 @@ func createTestIncident(t *testing.T, config configuration.Config, incident mess
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}

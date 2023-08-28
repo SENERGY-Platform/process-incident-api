@@ -24,22 +24,24 @@ import (
 	"github.com/SENERGY-Platform/process-incident-api/lib/database"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"github.com/SENERGY-Platform/process-incident-api/tests/server"
+	"sync"
 	"testing"
 	"time"
 )
 
 func Test(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return
@@ -178,17 +180,18 @@ func Test(t *testing.T) {
 }
 
 func TestTimeSort(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return

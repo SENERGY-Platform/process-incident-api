@@ -26,13 +26,12 @@ import (
 	"os"
 	"runtime/debug"
 	"strconv"
+	"sync"
 )
 
-func New(parentCtx context.Context, init configuration.Config) (config configuration.Config, err error) {
+func New(ctx context.Context, wg *sync.WaitGroup, init configuration.Config) (config configuration.Config, err error) {
 	config = init
 	config.Debug = true
-
-	ctx, cancel := context.WithCancel(parentCtx)
 
 	whPort, err := getFreePort()
 	if err != nil {
@@ -41,19 +40,10 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 	}
 	config.ApiPort = strconv.Itoa(whPort)
 
-	pool, err := dockertest.NewPool("")
+	_, ip, err := Mongo(ctx, wg)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
-		cancel()
-		return config, err
-	}
-
-	_, ip, err := Mongo(pool, ctx)
-	if err != nil {
-		log.Println("ERROR:", err)
-		debug.PrintStack()
-		cancel()
 		return config, err
 	}
 	config.MongoUrl = "mongodb://" + ip + ":27017"
