@@ -19,11 +19,8 @@ package server
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
 	"log"
 	"net"
-	"os"
 	"runtime/debug"
 	"strconv"
 	"sync"
@@ -49,39 +46,6 @@ func New(ctx context.Context, wg *sync.WaitGroup, init configuration.Config) (co
 	config.MongoUrl = "mongodb://" + ip + ":27017"
 
 	return config, nil
-}
-
-func Dockerlog(pool *dockertest.Pool, ctx context.Context, repo *dockertest.Resource, name string) {
-	out := &LogWriter{logger: log.New(os.Stdout, "["+name+"]", 0)}
-	err := pool.Client.Logs(docker.LogsOptions{
-		Stdout:       true,
-		Stderr:       true,
-		Context:      ctx,
-		Container:    repo.Container.ID,
-		Follow:       true,
-		OutputStream: out,
-		ErrorStream:  out,
-	})
-	if err != nil && err != context.Canceled {
-		log.Println("DEBUG-ERROR: unable to start docker log", name, err)
-	}
-}
-
-type LogWriter struct {
-	logger *log.Logger
-}
-
-func (this *LogWriter) Write(p []byte) (n int, err error) {
-	this.logger.Print(string(p))
-	return len(p), nil
-}
-
-func getFreePortStr() (string, error) {
-	intPort, err := getFreePort()
-	if err != nil {
-		return "", err
-	}
-	return strconv.Itoa(intPort), nil
 }
 
 func getFreePort() (int, error) {
