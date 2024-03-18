@@ -23,6 +23,7 @@ import (
 	"github.com/SENERGY-Platform/process-incident-api/lib/api/util"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/service-commons/pkg/accesslog"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -59,7 +60,7 @@ func Start(ctx context.Context, config configuration.Config, ctrl interfaces.Con
 	}
 	handler := util.NewCors(router)
 	if config.ApiLog {
-		handler = util.NewLogger(handler)
+		handler = accesslog.New(handler)
 	}
 	server := &http.Server{Addr: ":" + config.ApiPort, Handler: handler, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
 	go func() {
