@@ -27,12 +27,18 @@ import (
 )
 
 type Config struct {
-	MongoUrl                    string `json:"mongo_url"`
-	MongoDatabaseName           string `json:"mongo_database_name"`
-	MongoIncidentCollectionName string `json:"mongo_incident_collection_name"`
-	ApiPort                     string `json:"api_port"`
-	ApiLog                      bool   `json:"api_log"`
-	Debug                       bool   `json:"debug"`
+	MetricsPort                    string `json:"metrics_port"`
+	ShardsDb                       string `json:"shards_db"`
+	MongoUrl                       string `json:"mongo_url"`
+	MongoDatabaseName              string `json:"mongo_database_name"`
+	MongoIncidentCollectionName    string `json:"mongo_incident_collection_name"`
+	MongoOnIncidentCollectionName  string `json:"mongo_on_incident_collection_name"`
+	ApiPort                        string `json:"api_port"`
+	ApiLog                         bool   `json:"api_log"`
+	Debug                          bool   `json:"debug"`
+	NotificationUrl                string `json:"notification_url"`
+	DeveloperNotificationUrl       string `json:"developer_notification_url"`
+	CamundaIncidentRequestInterval string `json:"camunda_incident_request_interval"`
 }
 
 // loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)

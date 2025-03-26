@@ -18,6 +18,7 @@ package util
 
 import (
 	"errors"
+	"net/http"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -25,6 +26,10 @@ import (
 
 const DEFAULT_LIMIT = 100
 const DEFAULT_OFFSET = 0
+
+func GetAuthToken(req *http.Request) string {
+	return req.Header.Get("Authorization")
+}
 
 func ParseLimit(str string) (limit int, err error) {
 	if str == "" {

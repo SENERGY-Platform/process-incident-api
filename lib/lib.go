@@ -19,25 +19,43 @@ package lib
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-api/lib/api"
+	"github.com/SENERGY-Platform/process-incident-api/lib/camunda"
+	"github.com/SENERGY-Platform/process-incident-api/lib/camundasource"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/controller"
 	"github.com/SENERGY-Platform/process-incident-api/lib/database"
 	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-api/lib/metrics"
 )
 
 func Start(ctx context.Context, config configuration.Config) (err error) {
-	return StartWith(ctx, config, api.Factory, database.Factory)
+	return StartWith(ctx, config, api.Factory, database.Factory, camunda.Factory)
 }
 
-func StartWith(parentCtx context.Context, config configuration.Config, api interfaces.ApiFactory, database interfaces.DatabaseFactory) (err error) {
+func StartWith(parentCtx context.Context, config configuration.Config, api interfaces.ApiFactory, database interfaces.DatabaseFactory, camunda interfaces.CamundaFactory) (err error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	databaseInstance, err := database.Get(ctx, config)
 	if err != nil {
 		cancel()
 		return err
 	}
-	ctrl := controller.New(ctx, config, databaseInstance)
+	camundaInstance, err := camunda.Get(ctx, config)
+	if err != nil {
+		cancel()
+		return err
+	}
+	m := metrics.New().Serve(ctx, config.MetricsPort)
+	ctrl, err := controller.New(ctx, config, databaseInstance, camundaInstance, m)
+	if err != nil {
+		cancel()
+		return err
+	}
 	err = api.Start(ctx, config, ctrl)
+	if err != nil {
+		cancel()
+		return err
+	}
+	err = camundasource.Start(ctx, config, camundaInstance, ctrl)
 	if err != nil {
 		cancel()
 		return err

@@ -18,12 +18,16 @@ package server
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/process-incident-api/lib/camunda/cache"
+	"github.com/SENERGY-Platform/process-incident-api/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/tests/server/docker"
 	"log"
 	"net"
 	"runtime/debug"
 	"strconv"
 	"sync"
+	"time"
 )
 
 func New(ctx context.Context, wg *sync.WaitGroup, init configuration.Config) (config configuration.Config, err error) {
@@ -37,13 +41,58 @@ func New(ctx context.Context, wg *sync.WaitGroup, init configuration.Config) (co
 	}
 	config.ApiPort = strconv.Itoa(whPort)
 
-	_, ip, err := Mongo(ctx, wg)
+	_, ip, err := docker.Mongo(ctx, wg)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		return config, err
 	}
 	config.MongoUrl = "mongodb://" + ip + ":27017"
+
+	_, pgIp, _, err := docker.PostgresWithNetwork(ctx, wg, "camunda")
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		return config, err
+	}
+
+	camundaUrl, err := docker.Camunda(ctx, wg, pgIp, "5432")
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		return config, err
+	}
+
+	shardsDb, err := docker.Postgres(ctx, wg, "shards")
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		return config, err
+	}
+	config.ShardsDb = shardsDb
+
+	s, err := shards.New(shardsDb, cache.None)
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		return config, err
+	}
+
+	err = s.EnsureShard(camundaUrl)
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		return config, err
+	}
+
+	_, err = s.EnsureShardForUser("")
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		return config, err
+	}
+
+	time.Sleep(5 * time.Second)
 
 	return config, nil
 }

@@ -4,5 +4,11 @@
   "mongo_url":"mongodb://localhost:27017",
   "mongo_database_name":"incidents",
   "mongo_incident_collection_name":"incidents",
-  "debug": false
+  "mongo_on_incident_collection_name": "on_incident",
+  "debug": false,
+  "metrics_port": "8080",
+  "notification_url": "",
+  "developer_notification_url": "http://api.developer-notifications:8080",
+  "shards_db":"postgres://usr:pw@databasip:5432/shards?sslmode=disable",
+  "camunda_incident_request_interval": "5s"
 }

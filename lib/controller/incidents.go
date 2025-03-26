@@ -19,12 +19,17 @@ package controller
 import (
 	"errors"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
+	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
 	"log"
 	"net/http"
 )
 
-func (this *Controller) GetIncident(id string, user string) (incident messages.IncidentMessage, err error, errCode int) {
-	incident, exists, err := this.db.GetIncidents(id, user)
+func (this *Controller) GetIncident(token string, id string) (incident messages.IncidentMessage, err error, errCode int) {
+	jwtToken, err := jwt.Parse(token)
+	if err != nil {
+		return incident, err, http.StatusUnauthorized
+	}
+	incident, exists, err := this.db.GetIncidents(id, jwtToken.GetUserId())
 	if err != nil {
 		log.Printf("ERROR: %+v \n", err) //prints error with stack trace if error is from github.com/pkg/errors
 		return incident, errors.New("database error"), http.StatusInternalServerError
@@ -35,11 +40,16 @@ func (this *Controller) GetIncident(id string, user string) (incident messages.I
 	return incident, nil, http.StatusOK
 }
 
-func (this *Controller) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool, user string) (incidents []messages.IncidentMessage, err error) {
-	incidents, err = this.db.FindIncidents(externalTaskId, processDefinitionId, processInstanceId, limit, offset, sortBy, asc, user)
+func (this *Controller) FindIncidents(token string, externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool) (incidents []messages.IncidentMessage, err error, errCode int) {
+	jwtToken, err := jwt.Parse(token)
+	if err != nil {
+		return incidents, err, http.StatusUnauthorized
+	}
+	incidents, err = this.db.FindIncidents(externalTaskId, processDefinitionId, processInstanceId, limit, offset, sortBy, asc, jwtToken.GetUserId())
 	if err != nil {
 		log.Printf("ERROR: %+v \n", err) //prints error with stack trace if error is from github.com/pkg/errors
 		err = errors.New("database error")
+		return incidents, err, http.StatusInternalServerError
 	}
-	return
+	return incidents, nil, http.StatusOK
 }

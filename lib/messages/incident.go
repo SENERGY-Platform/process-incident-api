@@ -18,9 +18,10 @@ package messages
 
 import "time"
 
-type IncidentMessage struct {
+type IncidentMessage = Incident
+type Incident struct {
 	Id                  string    `json:"id" bson:"id"`
-	MsgVersion          int64     `json:"msg_version" bson:"msg_version"`
+	MsgVersion          int64     `json:"msg_version,omitempty" bson:"msg_version,omitempty"` //from version 3 onward will be set in KafkaIncidentsCommand and be copied to this field
 	ExternalTaskId      string    `json:"external_task_id" bson:"external_task_id"`
 	ProcessInstanceId   string    `json:"process_instance_id" bson:"process_instance_id"`
 	ProcessDefinitionId string    `json:"process_definition_id" bson:"process_definition_id"`
@@ -29,4 +30,26 @@ type IncidentMessage struct {
 	Time                time.Time `json:"time" bson:"time"`
 	TenantId            string    `json:"tenant_id" bson:"tenant_id"`
 	DeploymentName      string    `json:"deployment_name" bson:"deployment_name"`
+}
+
+type OnIncident struct {
+	ProcessDefinitionId string `json:"process_definition_id" bson:"process_definition_id"`
+	Restart             bool   `json:"restart" bson:"restart"`
+	Notify              bool   `json:"notify" bson:"notify"`
+}
+
+type CamundaIncident struct {
+	Id                  string `json:"id"`
+	ProcessDefinitionId string `json:"processDefinitionId"`
+	ProcessInstanceId   string `json:"processInstanceId"`
+	ExecutionId         string `json:"executionId"`
+	IncidentTimestamp   string `json:"incidentTimestamp"`
+	IncidentType        string `json:"incidentType"`
+	ActivityId          string `json:"activityId"`
+	CauseIncidentId     string `json:"causeIncidentId"`
+	RootCauseIncidentId string `json:"rootCauseIncidentId"`
+	Configuration       string `json:"configuration"`
+	TenantId            string `json:"tenantId"`
+	IncidentMessage     string `json:"incidentMessage"`
+	JobDefinitionId     string `json:"jobDefinitionId"`
 }

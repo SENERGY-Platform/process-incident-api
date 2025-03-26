@@ -18,15 +18,42 @@ package controller
 
 import (
 	"context"
+	developerNotifications "github.com/SENERGY-Platform/developer-notifications/pkg/client"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/service-commons/pkg/cache"
+	"log/slog"
+	"os"
+	"runtime/debug"
 )
 
 type Controller struct {
-	config configuration.Config
-	db     interfaces.Database
+	config                configuration.Config
+	db                    interfaces.Database
+	camunda               interfaces.Camunda
+	mux                   TopicMutex
+	handledIncidentsCache *cache.Cache
+	metrics               Metric
+	devNotifications      developerNotifications.Client
+	logger                *slog.Logger
 }
 
-func New(ctx context.Context, config configuration.Config, db interfaces.Database) *Controller {
-	return &Controller{config: config, db: db}
+type Metric interface {
+	NotifyIncidentMessage()
+}
+
+func New(ctx context.Context, config configuration.Config, db interfaces.Database, camunda interfaces.Camunda, m Metric) (ctrl *Controller, err error) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	if info, ok := debug.ReadBuildInfo(); ok {
+		logger = logger.With("go-module", info.Path)
+	}
+	c, err := cache.New(cache.Config{}) //if the worker is scaled, the l2 must be configured with a shared memcached
+	if err != nil {
+		return nil, err
+	}
+	ctrl = &Controller{config: config, camunda: camunda, db: db, metrics: m, logger: logger, handledIncidentsCache: c}
+	if config.DeveloperNotificationUrl != "" && config.DeveloperNotificationUrl != "-" {
+		ctrl.devNotifications = developerNotifications.New(config.DeveloperNotificationUrl)
+	}
+	return ctrl, nil
 }

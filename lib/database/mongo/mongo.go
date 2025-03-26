@@ -19,7 +19,6 @@ package mongo
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -61,47 +60,7 @@ func New(ctx context.Context, config configuration.Config) (result *mongoclient,
 	return result, nil
 }
 
-func (this *mongoclient) init() error {
-	err := this.ensureIndex(this.collection(), "id_index", "id", true, true)
-	if err != nil {
-		return err
-	}
-	err = this.ensureIndex(this.collection(), "external_task_id_index", "external_task_id", true, false)
-	if err != nil {
-		return err
-	}
-	err = this.ensureIndex(this.collection(), "process_instance_id_index", "process_instance_id", true, false)
-	if err != nil {
-		return err
-	}
-	err = this.ensureIndex(this.collection(), "process_definition_id_index", "process_definition_id", true, false)
-	if err != nil {
-		return err
-	}
-	err = this.ensureIndex(this.collection(), "tenant_id_index", "tenant_id", true, false)
-	if err != nil {
-		return err
-	}
-	err = this.ensureIndex(this.collection(), "time_index", "time", true, false)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (this *mongoclient) ensureIndex(collection *mongo.Collection, indexname string, indexKey string, asc bool, unique bool) error {
+func (this *mongoclient) getTimeoutContext() context.Context {
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	var direction int32 = -1
-	if asc {
-		direction = 1
-	}
-	_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bson.D{{indexKey, direction}},
-		Options: options.Index().SetName(indexname).SetUnique(unique),
-	})
-	return err
-}
-
-func (this *mongoclient) collection() *mongo.Collection {
-	return this.client.Database(this.config.MongoDatabaseName).Collection(this.config.MongoIncidentCollectionName)
+	return ctx
 }

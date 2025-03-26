@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -37,18 +37,18 @@ func checkIncidentsByPiid(t *testing.T, config configuration.Config, processInst
 	checkApiListFilter(t, config, "process_instance_id="+url.QueryEscape(processInstanceId), user, expected)
 }
 
-func checkIncidentsByTaskId(t *testing.T, config configuration.Config, taskId string, user string, expected []messages.IncidentMessage) {
-	checkApiListFilter(t, config, "external_task_id="+url.QueryEscape(taskId), user, expected)
+func checkIncidentsByTaskId(t *testing.T, config configuration.Config, taskId string, userToken string, expected []messages.IncidentMessage) {
+	checkApiListFilter(t, config, "external_task_id="+url.QueryEscape(taskId), userToken, expected)
 }
 
-func checkIncidentById(t *testing.T, config configuration.Config, id string, user string, expected messages.IncidentMessage) {
+func checkIncidentById(t *testing.T, config configuration.Config, id string, userToken string, expected messages.IncidentMessage) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	request, err := http.NewRequest("GET", "http://localhost:"+config.ApiPort+"/incidents/"+url.PathEscape(id), nil)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
-	request.Header.Add("X-UserID", user)
+	request.Header.Add("Authorization", userToken)
 	resp, err := client.Do(request)
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +56,8 @@ func checkIncidentById(t *testing.T, config configuration.Config, id string, use
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		t.Fatal(resp.StatusCode)
+		tmp, _ := io.ReadAll(resp.Body)
+		t.Fatal(resp.StatusCode, string(tmp))
 		return
 	}
 	result := messages.IncidentMessage{}
@@ -76,14 +77,14 @@ func checkIncidentById(t *testing.T, config configuration.Config, id string, use
 	}
 }
 
-func checkApiLimitAndSort(t *testing.T, config configuration.Config, limit string, offset string, sort string, user string, expected []messages.IncidentMessage) {
+func checkApiLimitAndSort(t *testing.T, config configuration.Config, limit string, offset string, sort string, userToken string, expected []messages.IncidentMessage) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	request, err := http.NewRequest("GET", "http://localhost:"+config.ApiPort+"/incidents?limit="+url.QueryEscape(limit)+"&offset="+url.QueryEscape(offset)+"&sort="+url.QueryEscape(sort), nil)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
-	request.Header.Add("X-UserID", user)
+	request.Header.Add("Authorization", userToken)
 	resp, err := client.Do(request)
 	if err != nil {
 		t.Fatal(err)
@@ -91,7 +92,7 @@ func checkApiLimitAndSort(t *testing.T, config configuration.Config, limit strin
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		t.Fatal(resp.StatusCode, string(b))
 		return
 	}
@@ -118,14 +119,14 @@ func checkApiLimitAndSort(t *testing.T, config configuration.Config, limit strin
 	}
 }
 
-func checkApiListFilter(t *testing.T, config configuration.Config, query string, user string, expected []messages.IncidentMessage) {
+func checkApiListFilter(t *testing.T, config configuration.Config, query string, userToken string, expected []messages.IncidentMessage) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	request, err := http.NewRequest("GET", "http://localhost:"+config.ApiPort+"/incidents?"+query, nil)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
-	request.Header.Add("X-UserID", user)
+	request.Header.Add("Authorization", userToken)
 	resp, err := client.Do(request)
 	if err != nil {
 		t.Fatal(err)

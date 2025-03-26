@@ -1,0 +1,252 @@
+basePath: /
+definitions:
+  messages.IncidentMessage:
+    properties:
+      deployment_name:
+        type: string
+      error_message:
+        type: string
+      external_task_id:
+        type: string
+      id:
+        type: string
+      msg_version:
+        description: from version 3 onward will be set in KafkaIncidentsCommand and
+          be copied to this field
+        type: integer
+      process_definition_id:
+        type: string
+      process_instance_id:
+        type: string
+      tenant_id:
+        type: string
+      time:
+        type: string
+      worker_id:
+        type: string
+    type: object
+  messages.OnIncident:
+    properties:
+      notify:
+        type: boolean
+      process_definition_id:
+        type: string
+      restart:
+        type: boolean
+    type: object
+info:
+  contact: {}
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Incidents API
+  version: "0.1"
+paths:
+  /incidents:
+    get:
+      description: list incidents
+      parameters:
+      - description: limits size of result; default 100
+        in: query
+        name: limit
+        type: integer
+      - description: offset to be used in combination with limit, default 0
+        in: query
+        name: offset
+        type: integer
+      - description: default id.asc, sortable by id, external_task_id, process_instance_id,
+          process_definition_id, time
+        in: query
+        name: sort
+        type: string
+      - description: filter by process_definition_id
+        in: query
+        name: process_definition_id
+        type: string
+      - description: filter by process_instance_id
+        in: query
+        name: process_instance_id
+        type: string
+      - description: filter by external_task_id
+        in: query
+        name: external_task_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/messages.IncidentMessage'
+            type: array
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: list incidents
+      tags:
+      - incidents
+    post:
+      description: create incident, user must be admin
+      parameters:
+      - description: Incident
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/messages.IncidentMessage'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: create incident
+      tags:
+      - incidents
+  /incidents/{id}:
+    get:
+      description: get incident
+      parameters:
+      - description: Incident Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.IncidentMessage'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: get incident
+      tags:
+      - incidents
+  /on-incident-handler:
+    put:
+      description: set on incident handler, user must be admin
+      parameters:
+      - description: Incident-Handler
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/messages.OnIncident'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: set on incident handler
+      tags:
+      - incidents
+  /process-definitions/{id}:
+    delete:
+      description: delete incidents by process-definition id, user must be admin
+      parameters:
+      - description: process-definition id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: delete incidents by process-definition id
+      tags:
+      - incidents
+  /process-instances/{id}:
+    delete:
+      description: delete incidents by process-instance id, user must be admin
+      parameters:
+      - description: process-instance id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: delete incidents by process-instance id
+      tags:
+      - incidents
+securityDefinitions:
+  Bearer:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

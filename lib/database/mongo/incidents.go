@@ -18,6 +18,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,10 +26,13 @@ import (
 	"log"
 )
 
+func (this *mongoclient) collection() *mongo.Collection {
+	return this.client.Database(this.config.MongoDatabaseName).Collection(this.config.MongoIncidentCollectionName)
+}
+
 func (this *mongoclient) GetIncidents(id string, user string) (incident messages.IncidentMessage, exists bool, err error) {
-	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	result := this.collection().FindOne(ctx, bson.M{"id": id, "tenant_id": user})
-	if err == mongo.ErrNoDocuments {
+	result := this.collection().FindOne(this.getTimeoutContext(), bson.M{"id": id, "tenant_id": user})
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return incident, false, nil
 	}
 	err = result.Err()
@@ -36,7 +40,7 @@ func (this *mongoclient) GetIncidents(id string, user string) (incident messages
 		return incident, exists, err
 	}
 	err = result.Decode(&incident)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return incident, false, nil
 	}
 	return incident, true, err
@@ -70,8 +74,7 @@ func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionI
 		SetLimit(int64(limit)).
 		SetSort(bson.D{{sortby, direction}})
 
-	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	cursor, err := this.collection().Find(ctx, filter, option)
+	cursor, err := this.collection().Find(this.getTimeoutContext(), filter, option)
 	if err != nil {
 		return incidents, err
 	}
@@ -85,4 +88,27 @@ func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionI
 	}
 	err = cursor.Err()
 	return incidents, err
+}
+
+func (this *mongoclient) SaveIncident(incident messages.Incident) error {
+	_, err := this.collection().ReplaceOne(this.getTimeoutContext(), bson.M{"id": incident.Id}, incident, options.Replace().SetUpsert(true))
+	return err
+}
+
+func (this *mongoclient) DeleteByDefinitionId(id string) error {
+	err := this.DeleteIncidentByDefinitionId(id)
+	if err != nil {
+		return err
+	}
+	return this.DeleteOnIncidentByDefinitionId(id)
+}
+
+func (this *mongoclient) DeleteIncidentByInstanceId(id string) error {
+	_, err := this.collection().DeleteMany(this.getTimeoutContext(), bson.M{"process_instance_id": id})
+	return err
+}
+
+func (this *mongoclient) DeleteIncidentByDefinitionId(id string) error {
+	_, err := this.collection().DeleteMany(this.getTimeoutContext(), bson.M{"process_definition_id": id})
+	return err
 }

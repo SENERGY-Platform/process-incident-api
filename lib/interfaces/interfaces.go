@@ -23,13 +23,22 @@ import (
 )
 
 type Controller interface {
-	GetIncident(id string, user string) (incident messages.IncidentMessage, err error, errCode int)
-	FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool, user string) (incidents []messages.IncidentMessage, err error)
+	GetIncident(token string, id string) (incident messages.IncidentMessage, err error, errCode int)
+	FindIncidents(token string, externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool) (incidents []messages.IncidentMessage, err error, errCode int)
+	CreateIncident(token string, incident messages.Incident) (err error, code int)
+	SetOnIncidentHandler(token string, incident messages.OnIncident) (err error, code int)
+	DeleteIncidentByProcessInstanceId(token string, id string) (err error, code int)
+	DeleteIncidentByProcessDefinitionId(token string, id string) (err error, code int)
 }
 
 type Database interface {
 	GetIncidents(id string, user string) (incident messages.IncidentMessage, exists bool, err error)
 	FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool, user string) (incidents []messages.IncidentMessage, err error)
+	DeleteByDefinitionId(id string) error
+	SaveIncident(incident messages.Incident) error
+	DeleteIncidentByInstanceId(id string) error
+	SaveOnIncident(handler messages.OnIncident) error
+	GetOnIncident(definitionId string) (incident messages.OnIncident, exists bool, err error)
 }
 
 type DatabaseFactory interface {
@@ -38,4 +47,15 @@ type DatabaseFactory interface {
 
 type ApiFactory interface {
 	Start(ctx context.Context, config configuration.Config, ctrl Controller) error
+}
+
+type CamundaFactory interface {
+	Get(ctx context.Context, config configuration.Config) (Camunda, error)
+}
+
+type Camunda interface {
+	StopProcessInstance(id string, tenantId string) (err error)
+	GetProcessName(id string, tenantId string) (string, error)
+	StartProcess(processDefinitionId string, userId string) (err error)
+	GetIncidents() (result []messages.CamundaIncident, err error)
 }
