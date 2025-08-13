@@ -19,15 +19,16 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"runtime/debug"
+	"time"
+
 	developerNotifications "github.com/SENERGY-Platform/developer-notifications/pkg/client"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"github.com/SENERGY-Platform/process-incident-api/lib/notification"
 	"github.com/SENERGY-Platform/service-commons/pkg/cache"
 	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
-	"log"
-	"net/http"
-	"runtime/debug"
-	"time"
 )
 
 func (this *Controller) CreateIncident(token string, incident messages.Incident) (err error, code int) {
@@ -88,6 +89,16 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 	} else {
 		incident.DeploymentName = name
 	}
+
+	if incident.BusinessKey == "" {
+		instance, err := this.camunda.GetHistoricProcessInstance(incident.ProcessInstanceId, incident.TenantId)
+		if err != nil {
+			log.Println("WARNING: unable to get process instance in createIncident(): ", err)
+			instance = messages.HistoricProcessInstance{}
+		}
+		incident.BusinessKey = instance.BusinessKey
+	}
+
 	this.logger.Info("process-incident", "snrgy-log-type", "process-incident", "error", incident.ErrorMessage, "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId, "process-instance-id", incident.ProcessInstanceId)
 	if incident.TenantId != "" {
 		if !registeredHandling || handling.Notify {
@@ -103,16 +114,20 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 			this.Notify(msg)
 		}
 	}
-	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId, incident.TenantId)
-	if err != nil {
-		return err
-	}
 	err = this.db.SaveIncident(incident)
 	if err != nil {
 		return err
 	}
+	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId, incident.TenantId)
+	if err != nil {
+		return err
+	}
 	if registeredHandling && handling.Restart {
-		err = this.camunda.StartProcess(incident.ProcessDefinitionId, incident.TenantId)
+		if incident.BusinessKey != "" {
+			err = this.camunda.StartProcessWithBusinessKey(incident.ProcessDefinitionId, incident.BusinessKey, incident.TenantId)
+		} else {
+			err = this.camunda.StartProcess(incident.ProcessDefinitionId, incident.TenantId)
+		}
 		if err != nil {
 			this.logger.Error("unable to restart process", "snrgy-log-type", "process-incident", "error", err.Error(), "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId, "process-instance-id", incident.ProcessInstanceId)
 			if incident.TenantId != "" {

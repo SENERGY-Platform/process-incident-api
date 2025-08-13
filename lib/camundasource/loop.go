@@ -18,13 +18,14 @@ package camundasource
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"github.com/SENERGY-Platform/process-incident-api/lib/client"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/controller"
 	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
-	"log"
-	"time"
 )
 
 func Start(ctx context.Context, config configuration.Config, camunda interfaces.Camunda, ctrl *controller.Controller) error {

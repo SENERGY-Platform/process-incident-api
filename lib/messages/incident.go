@@ -30,6 +30,7 @@ type Incident struct {
 	Time                time.Time `json:"time" bson:"time"`
 	TenantId            string    `json:"tenant_id" bson:"tenant_id"`
 	DeploymentName      string    `json:"deployment_name" bson:"deployment_name"`
+	BusinessKey         string    `json:"business_key" bson:"business_key"`
 }
 
 type OnIncident struct {
@@ -52,4 +53,24 @@ type CamundaIncident struct {
 	TenantId            string `json:"tenantId"`
 	IncidentMessage     string `json:"incidentMessage"`
 	JobDefinitionId     string `json:"jobDefinitionId"`
+}
+
+type HistoricProcessInstance struct {
+	Id                       string  `json:"id"`
+	SuperProcessInstanceId   string  `json:"superProcessInstanceId"`
+	SuperCaseInstanceId      string  `json:"superCaseInstanceId"`
+	CaseInstanceId           string  `json:"caseInstanceId"`
+	ProcessDefinitionName    string  `json:"processDefinitionName"`
+	ProcessDefinitionKey     string  `json:"processDefinitionKey"`
+	ProcessDefinitionVersion float64 `json:"processDefinitionVersion"`
+	ProcessDefinitionId      string  `json:"processDefinitionId"`
+	BusinessKey              string  `json:"businessKey"`
+	StartTime                string  `json:"startTime"`
+	EndTime                  string  `json:"endTime"`
+	DurationInMillis         float64 `json:"durationInMillis"`
+	StartUserId              string  `json:"startUserId"`
+	StartActivityId          string  `json:"startActivityId"`
+	DeleteReason             string  `json:"deleteReason"`
+	TenantId                 string  `json:"tenantId"`
+	State                    string  `json:"state"`
 }

@@ -22,17 +22,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/process-incident-api/lib/camunda/cache"
-	"github.com/SENERGY-Platform/process-incident-api/lib/camunda/shards"
-	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
-	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"runtime/debug"
 	"time"
+
+	"github.com/SENERGY-Platform/process-incident-api/lib/camunda/cache"
+	"github.com/SENERGY-Platform/process-incident-api/lib/camunda/shards"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 )
 
 type FactoryType struct{}
@@ -149,6 +150,48 @@ func (this *Camunda) StartProcess(processDefinitionId string, userId string) (er
 	return nil
 }
 
+func (this *Camunda) StartProcessWithBusinessKey(processDefinitionId string, businessKey string, userId string) (err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return err
+	}
+
+	parameters, err := this.getProcessParameters(shard, processDefinitionId)
+	if err != nil {
+		return err
+	}
+	if len(parameters) > 0 {
+		return errors.New("restart of processes with start-parameters not supported")
+	}
+
+	message := createStartMessage(nil, businessKey)
+
+	b := new(bytes.Buffer)
+	err = json.NewEncoder(b).Encode(message)
+	if err != nil {
+		return
+	}
+	if this.config.Debug == true {
+		log.Println("DEBUG: start process definition at camunda:", processDefinitionId)
+	}
+	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/submit-form", b)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		temp, _ := io.ReadAll(resp.Body)
+		err = errors.New(resp.Status + " " + string(temp))
+		return
+	}
+	return nil
+}
+
 type Variable struct {
 	Value     interface{} `json:"value"`
 	Type      string      `json:"type"`
@@ -174,9 +217,9 @@ func (this *Camunda) getProcessParameters(shard string, processDefinitionId stri
 	return
 }
 
-func createStartMessage(parameter map[string]interface{}) map[string]interface{} {
+func createStartMessage(parameter map[string]interface{}, businessKey string) map[string]interface{} {
 	if len(parameter) == 0 {
-		return map[string]interface{}{}
+		return map[string]interface{}{"businessKey": businessKey}
 	}
 	variables := map[string]interface{}{}
 	for key, val := range parameter {
@@ -184,7 +227,7 @@ func createStartMessage(parameter map[string]interface{}) map[string]interface{}
 			"value": val,
 		}
 	}
-	return map[string]interface{}{"variables": variables}
+	return map[string]interface{}{"variables": variables, "businessKey": businessKey}
 }
 
 func (this *Camunda) GetIncidents() (result []messages.CamundaIncident, err error) {
@@ -212,6 +255,30 @@ func (this *Camunda) GetShardIncidents(shard string) (result []messages.CamundaI
 	if resp.StatusCode >= 300 {
 		pl, _ := io.ReadAll(resp.Body)
 		err = fmt.Errorf("unable to load incidents: %v", string(pl))
+		return result, err
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func (this *Camunda) GetHistoricProcessInstance(id string, userId string) (result messages.HistoricProcessInstance, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return result, err
+	}
+
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(shard + "/engine-rest/history/process-instance/" + url.QueryEscape(id))
+	if err != nil {
+		return result, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		pl, _ := io.ReadAll(resp.Body)
+		err = fmt.Errorf("unable to load process-instance: %v", string(pl))
 		return result, err
 	}
 	err = json.NewDecoder(resp.Body).Decode(&result)

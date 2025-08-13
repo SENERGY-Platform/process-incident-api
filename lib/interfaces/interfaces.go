@@ -18,6 +18,7 @@ package interfaces
 
 import (
 	"context"
+
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 )
@@ -57,5 +58,7 @@ type Camunda interface {
 	StopProcessInstance(id string, tenantId string) (err error)
 	GetProcessName(id string, tenantId string) (string, error)
 	StartProcess(processDefinitionId string, userId string) (err error)
+	StartProcessWithBusinessKey(processDefinitionId string, businessKey string, userId string) (err error)
 	GetIncidents() (result []messages.CamundaIncident, err error)
+	GetHistoricProcessInstance(id string, userId string) (result messages.HistoricProcessInstance, err error)
 }

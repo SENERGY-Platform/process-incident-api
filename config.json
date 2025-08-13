@@ -6,7 +6,7 @@
   "mongo_incident_collection_name":"incidents",
   "mongo_on_incident_collection_name": "on_incident",
   "debug": false,
-  "metrics_port": "8080",
+  "metrics_port": "8081",
   "notification_url": "",
   "developer_notification_url": "http://api.developer-notifications:8080",
   "shards_db":"postgres://usr:pw@databasip:5432/shards?sslmode=disable",
