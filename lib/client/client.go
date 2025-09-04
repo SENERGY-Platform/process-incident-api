@@ -20,12 +20,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
-	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 )
 
 type Client interface {
@@ -68,7 +69,7 @@ func (this *ClientImpl) FindIncidents(token string, externalTaskId string, proce
 	if processDefinitionId != "" {
 		query.Add("process_definition_id", processDefinitionId)
 	}
-	if processDefinitionId != "" {
+	if processInstanceId != "" {
 		query.Add("process_instance_id", processInstanceId)
 	}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%v/incidents?"+query.Encode(), this.serverUrl), nil)
