@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"runtime/debug"
@@ -100,7 +99,7 @@ func (this *Camunda) GetProcessName(id string, tenantId string) (name string, er
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		temp, _ := io.ReadAll(resp.Body)
-		log.Println("ERROR:", resp.Status, string(temp))
+		this.config.GetLogger().Error("unexpected response", "status", resp.Status, "body", string(temp))
 		debug.PrintStack()
 		return "", errors.New("unexpected response")
 	}
@@ -171,9 +170,7 @@ func (this *Camunda) StartProcessWithBusinessKey(processDefinitionId string, bus
 	if err != nil {
 		return
 	}
-	if this.config.Debug == true {
-		log.Println("DEBUG: start process definition at camunda:", processDefinitionId)
-	}
+	this.config.GetLogger().Debug("start process definition at camunda", "processDefinitionId", processDefinitionId, "message", message)
 	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/submit-form", b)
 	if err != nil {
 		return err

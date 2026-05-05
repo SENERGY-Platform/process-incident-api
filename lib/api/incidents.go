@@ -18,13 +18,13 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"runtime/debug"
+
 	"github.com/SENERGY-Platform/process-incident-api/lib/api/util"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
-	"log"
-	"net/http"
-	"runtime/debug"
 )
 
 func init() {
@@ -59,7 +59,7 @@ func (this *IncidentsEndpoints) GetIncident(config configuration.Config, ctrl in
 		err = json.NewEncoder(writer).Encode(incident)
 		if err != nil {
 			debug.PrintStack()
-			log.Println("ERROR: ", err)
+			config.GetLogger().Error("unable to encode incident", "error", err.Error())
 		}
 	})
 }
@@ -117,7 +117,7 @@ func (this *IncidentsEndpoints) ListIncidents(config configuration.Config, ctrl 
 		err = json.NewEncoder(writer).Encode(incidents)
 		if err != nil {
 			debug.PrintStack()
-			log.Println("ERROR: ", err)
+			config.GetLogger().Error("unable to encode incidents", "error", err.Error())
 		}
 	})
 }

@@ -19,10 +19,11 @@ package cache
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
+	"sync"
+
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/coocood/freecache"
-	"log"
-	"sync"
 )
 
 //TODO: replace with commons lib cache
@@ -103,16 +104,14 @@ func (this *LayeredCache) Get(key string) (item Item, err error) {
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	item.Value, err = this.l1.Get([]byte(key))
-	if err != nil && err != freecache.ErrNotFound {
-		log.Println("ERROR: in LayeredCache::l1.Get()", err)
+	if err != nil && !errors.Is(err, freecache.ErrNotFound) {
+		slog.Error("in LayeredCache::l1.Get()", "key", key, "error", err)
 	}
 	if err != nil && this.l2 != nil {
-		if this.Debug {
-			log.Println("DEBUG: use l2 cache", key, err)
-		}
+		slog.Debug("in LayeredCache::l2.Get()", "key", key, "error", err)
 		var temp *memcache.Item
 		temp, err = this.l2.Get(key)
-		if err == memcache.ErrCacheMiss {
+		if errors.Is(err, memcache.ErrCacheMiss) {
 			err = ErrNotFound
 			return
 		}
@@ -121,7 +120,7 @@ func (this *LayeredCache) Get(key string) (item Item, err error) {
 		}
 		err := this.l1.Set([]byte(key), temp.Value, this.config.L1Expiration)
 		if err != nil {
-			log.Println("ERROR: in LayeredCache::l1.Set()", err)
+			slog.Error("in LayeredCache::l1.Set()", "key", key, "error", err)
 		}
 		item.Value = temp.Value
 	}
@@ -133,12 +132,12 @@ func (this *LayeredCache) Set(key string, value []byte) {
 	defer this.mux.Unlock()
 	err := this.l1.Set([]byte(key), value, this.config.L1Expiration)
 	if err != nil {
-		log.Println("ERROR: in LayeredCache::l1.Set()", err)
+		slog.Error("in LayeredCache::l1.Set()", "key", key, "error", err)
 	}
 	if this.l2 != nil {
 		err = this.l2.Set(&memcache.Item{Value: value, Expiration: this.config.L2Expiration, Key: key})
 		if err != nil {
-			log.Println("ERROR: in LayeredCache::l2.Set()", err)
+			slog.Error("in LayeredCache::l2.Set()", "key", key, "error", err)
 		}
 	}
 	return

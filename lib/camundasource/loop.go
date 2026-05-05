@@ -18,7 +18,6 @@ package camundasource
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/SENERGY-Platform/process-incident-api/lib/client"
@@ -47,7 +46,7 @@ func Start(ctx context.Context, config configuration.Config, camunda interfaces.
 			default:
 				incidents, err := camunda.GetIncidents()
 				if err != nil {
-					log.Println("WARNING: unable to load camunda incidents", err)
+					config.GetLogger().Warn("unable to load camunda incidents", "error", err)
 					continue
 				}
 				for _, incident := range incidents {
@@ -63,7 +62,7 @@ func Start(ctx context.Context, config configuration.Config, camunda interfaces.
 						TenantId:            incident.TenantId,
 					})
 					if err != nil {
-						log.Println("WARNING: unable to handle camunda incidents", err)
+						config.GetLogger().Warn("unable to handle camunda incidents", "error", err)
 						continue
 					}
 				}

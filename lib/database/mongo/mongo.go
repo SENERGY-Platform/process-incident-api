@@ -18,12 +18,12 @@ package mongo
 
 import (
 	"context"
+	"time"
+
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"log"
-	"time"
 )
 
 const TIMEOUT = 2 * time.Second
@@ -42,7 +42,7 @@ func New(ctx context.Context, config configuration.Config) (result *mongoclient,
 	}
 	go func() {
 		<-ctx.Done()
-		log.Println("disconnect mongodb")
+		config.GetLogger().Info("disconnect mongodb")
 		disconnectCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 		result.client.Disconnect(disconnectCtx)
 	}()

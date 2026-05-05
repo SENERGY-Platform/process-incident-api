@@ -19,11 +19,11 @@ package mongo
 import (
 	"context"
 	"errors"
+
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 func (this *mongoclient) collection() *mongo.Collection {
@@ -47,9 +47,7 @@ func (this *mongoclient) GetIncidents(id string, user string) (incident messages
 }
 
 func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortby string, asc bool, user string) (incidents []messages.IncidentMessage, err error) {
-	if this.config.Debug {
-		log.Println("DEBUG: FindIncidents()", externalTaskId, processDefinitionId, processInstanceId)
-	}
+	this.config.GetLogger().Debug("FindIncidents()", "externalTaskId", externalTaskId, "processDefinitionId", processDefinitionId, "processInstanceId", processInstanceId)
 	filter := bson.M{"tenant_id": user}
 	if processDefinitionId != "" {
 		filter["process_definition_id"] = processDefinitionId
@@ -60,9 +58,7 @@ func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionI
 	if externalTaskId != "" {
 		filter["external_task_id"] = externalTaskId
 	}
-	if this.config.Debug {
-		log.Println("DEBUG: FindIncidents() filter = ", filter)
-	}
+	this.config.GetLogger().Debug("FindIncidents()", "filter", filter)
 
 	direction := int32(1)
 	if !asc {

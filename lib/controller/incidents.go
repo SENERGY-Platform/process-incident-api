@@ -18,10 +18,10 @@ package controller
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/SENERGY-Platform/process-incident-api/lib/messages"
 	"github.com/SENERGY-Platform/service-commons/pkg/jwt"
-	"log"
-	"net/http"
 )
 
 func (this *Controller) GetIncident(token string, id string) (incident messages.IncidentMessage, err error, errCode int) {
@@ -31,7 +31,7 @@ func (this *Controller) GetIncident(token string, id string) (incident messages.
 	}
 	incident, exists, err := this.db.GetIncidents(id, jwtToken.GetUserId())
 	if err != nil {
-		log.Printf("ERROR: %+v \n", err) //prints error with stack trace if error is from github.com/pkg/errors
+		this.logger.Error("database error", "error", err.Error())
 		return incident, errors.New("database error"), http.StatusInternalServerError
 	}
 	if !exists {
@@ -47,7 +47,7 @@ func (this *Controller) FindIncidents(token string, externalTaskId string, proce
 	}
 	incidents, err = this.db.FindIncidents(externalTaskId, processDefinitionId, processInstanceId, limit, offset, sortBy, asc, jwtToken.GetUserId())
 	if err != nil {
-		log.Printf("ERROR: %+v \n", err) //prints error with stack trace if error is from github.com/pkg/errors
+		this.logger.Error("database error", "error", err.Error())
 		err = errors.New("database error")
 		return incidents, err, http.StatusInternalServerError
 	}

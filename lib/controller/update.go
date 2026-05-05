@@ -19,7 +19,6 @@ package controller
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -78,7 +77,7 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 	this.metrics.NotifyIncidentMessage()
 	handling, registeredHandling, err := this.db.GetOnIncident(incident.ProcessDefinitionId)
 	if err != nil {
-		log.Println("ERROR: ", err)
+		this.logger.Error("unable to get on-incident handler", "error", err.Error())
 		debug.PrintStack()
 		return err
 	}
@@ -93,7 +92,7 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 	if incident.BusinessKey == "" {
 		instance, err := this.camunda.GetHistoricProcessInstance(incident.ProcessInstanceId, incident.TenantId)
 		if err != nil {
-			log.Println("WARNING: unable to get process instance in createIncident(): ", err)
+			this.logger.Warn("unable to get process instance", "error", err.Error())
 			instance = messages.HistoricProcessInstance{}
 		}
 		incident.BusinessKey = instance.BusinessKey
@@ -195,9 +194,7 @@ func (this *Controller) Notify(msg notification.Message) {
 	_ = notification.Send(this.config.NotificationUrl, msg)
 	if this.devNotifications != nil {
 		go func() {
-			if this.config.Debug {
-				log.Println("DEBUG: send developer-notification")
-			}
+			this.logger.Debug("send developer-notification", "msg", fmt.Sprintf("%+v", msg))
 			err := this.devNotifications.SendMessage(developerNotifications.Message{
 				Sender: "github.com/SENERGY-Platform/process-incident-worker",
 				Title:  "Process-Incident-User-Notification",
@@ -205,7 +202,7 @@ func (this *Controller) Notify(msg notification.Message) {
 				Body:   fmt.Sprintf("Notification For %v\nTitle: %v\nMessage: %v\n", msg.UserId, msg.Title, msg.Message),
 			})
 			if err != nil {
-				log.Println("ERROR: unable to send developer-notification", err)
+				this.logger.Error("unable to send developer-notification", "error", err.Error())
 			}
 		}()
 	}

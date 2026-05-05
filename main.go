@@ -19,12 +19,13 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/SENERGY-Platform/process-incident-api/lib"
-	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/SENERGY-Platform/process-incident-api/lib"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 )
 
 func main() {
@@ -39,11 +40,12 @@ func main() {
 
 	err = lib.Start(context.Background(), config)
 	if err != nil {
+		config.GetLogger().Error("unable to start lib", "error", err)
 		log.Fatalf("FATAL: %+v", err)
 	}
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	sig := <-shutdown
-	log.Println("received shutdown signal", sig)
+	config.GetLogger().Info("received shutdown signal", "signal", sig)
 }

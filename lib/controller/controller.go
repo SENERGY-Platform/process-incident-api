@@ -18,13 +18,13 @@ package controller
 
 import (
 	"context"
+	"log/slog"
+	"runtime/debug"
+
 	developerNotifications "github.com/SENERGY-Platform/developer-notifications/pkg/client"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
 	"github.com/SENERGY-Platform/service-commons/pkg/cache"
-	"log/slog"
-	"os"
-	"runtime/debug"
 )
 
 type Controller struct {
@@ -43,7 +43,7 @@ type Metric interface {
 }
 
 func New(ctx context.Context, config configuration.Config, db interfaces.Database, camunda interfaces.Camunda, m Metric) (ctrl *Controller, err error) {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := config.GetLogger()
 	if info, ok := debug.ReadBuildInfo(); ok {
 		logger = logger.With("go-module", info.Path)
 	}

@@ -20,15 +20,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/process-incident-api/lib/api/util"
-	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
-	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
-	"github.com/SENERGY-Platform/service-commons/pkg/accesslog"
 	"log"
 	"net/http"
 	"reflect"
 	"runtime/debug"
 	"time"
+
+	"github.com/SENERGY-Platform/process-incident-api/lib/api/util"
+	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-api/lib/interfaces"
+	"github.com/SENERGY-Platform/service-commons/pkg/accesslog"
 )
 
 //go:generate go tool swag init -o ../../docs --parseDependency -d . -g api.go
@@ -54,15 +55,16 @@ func Start(ctx context.Context, config configuration.Config, ctrl interfaces.Con
 	router := GetRouter(config, ctrl)
 	server := &http.Server{Addr: ":" + config.ApiPort, Handler: router, WriteTimeout: 10 * time.Second, ReadTimeout: 2 * time.Second, ReadHeaderTimeout: 2 * time.Second}
 	go func() {
-		log.Println("listening on ", server.Addr)
+		config.GetLogger().Info("listening on " + server.Addr)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			debug.PrintStack()
+			config.GetLogger().Error("FATAL", "error", err)
 			log.Fatal("FATAL:", err)
 		}
 	}()
 	go func() {
 		<-ctx.Done()
-		log.Println("api shutdown", server.Shutdown(context.Background()))
+		config.GetLogger().Info("api shutdown", "result", server.Shutdown(context.Background()))
 	}()
 	return
 }
@@ -79,20 +81,20 @@ func Start(ctx context.Context, config configuration.Config, ctrl interfaces.Con
 // @description Type "Bearer" followed by a space and JWT token.
 func GetRouter(config configuration.Config, control interfaces.Controller) http.Handler {
 	router := http.NewServeMux()
-	log.Println("add heart beat endpoint")
+	config.GetLogger().Info("add heart beat endpoint")
 	router.HandleFunc("GET /{$}", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
 	for _, e := range endpoints {
 		for name, call := range getEndpointMethods(e) {
-			log.Println("add endpoint " + name)
+			config.GetLogger().Info("add endpoint", "name", name)
 			call(config, control, router)
 		}
 	}
-	log.Println("add cors")
+	config.GetLogger().Info("add cors")
 	handler := util.NewCors(router)
 	if config.ApiLog {
-		log.Println("add logging")
+		config.GetLogger().Info("add logging")
 		handler = accesslog.New(handler)
 	}
 	return handler
