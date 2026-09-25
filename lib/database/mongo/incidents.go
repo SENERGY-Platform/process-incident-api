@@ -27,7 +27,7 @@ import (
 )
 
 func (this *mongoclient) collection() *mongo.Collection {
-	return this.client.Database(this.config.MongoDatabaseName).Collection(this.config.MongoIncidentCollectionName)
+	return this.client.Database(this.config.MongoDatabase).Collection(this.config.MongoIncidentCollectionName)
 }
 
 func (this *mongoclient) GetIncidents(id string, user string) (incident messages.IncidentMessage, exists bool, err error) {

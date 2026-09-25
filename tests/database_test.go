@@ -40,7 +40,7 @@ func createTestIncident(t *testing.T, config configuration.Config, incident mess
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
-	_, err = client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).
+	_, err = client.Database(config.MongoDatabase).Collection(config.MongoIncidentCollectionName).
 		ReplaceOne(ctx, bson.M{"id": incident.Id}, incident, options.Replace().SetUpsert(true))
 	if err != nil {
 		t.Fatalf("ERROR: %+v", err)

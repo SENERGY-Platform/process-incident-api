@@ -132,7 +132,7 @@ func TestScriptIncident(t *testing.T) {
 			t.Errorf("ERROR: %+v", err)
 			return
 		}
-		c, err := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).Find(ctx, bson.M{})
+		c, err := client.Database(config.MongoDatabase).Collection(config.MongoIncidentCollectionName).Find(ctx, bson.M{})
 		if err != nil {
 			t.Errorf("ERROR: %+v", err)
 			return

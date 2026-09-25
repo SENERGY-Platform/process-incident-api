@@ -35,7 +35,7 @@ func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
-	result := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).FindOne(ctx, bson.M{"id": expected.Id})
+	result := client.Database(config.MongoDatabase).Collection(config.MongoIncidentCollectionName).FindOne(ctx, bson.M{"id": expected.Id})
 	err = result.Err()
 	if err != nil {
 		t.Fatalf("ERROR: %+v", err)
@@ -71,7 +71,7 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 		})
 
 	incidents := []messages.Incident{}
-	cursor, err := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).Find(ctx, bson.M{}, option)
+	cursor, err := client.Database(config.MongoDatabase).Collection(config.MongoIncidentCollectionName).Find(ctx, bson.M{}, option)
 	if err != nil {
 		t.Fatalf("ERROR: %+v", err)
 		return
@@ -105,7 +105,7 @@ func checkOnIncidentsInDatabase(t *testing.T, config configuration.Config, expec
 	}
 
 	result := []messages.OnIncident{}
-	cursor, err := client.Database(config.MongoDatabaseName).Collection(config.MongoOnIncidentCollectionName).Find(ctx, bson.M{}, nil)
+	cursor, err := client.Database(config.MongoDatabase).Collection(config.MongoOnIncidentCollectionName).Find(ctx, bson.M{}, nil)
 	if err != nil {
 		t.Fatalf("ERROR: %+v", err)
 		return

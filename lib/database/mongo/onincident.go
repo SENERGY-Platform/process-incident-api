@@ -37,7 +37,7 @@ func (this *mongoclient) DeleteOnIncidentByDefinitionId(definitionId string) err
 }
 
 func (this *mongoclient) onIncidentsCollection() *mongo.Collection {
-	return this.client.Database(this.config.MongoDatabaseName).Collection(this.config.MongoOnIncidentCollectionName)
+	return this.client.Database(this.config.MongoDatabase).Collection(this.config.MongoOnIncidentCollectionName)
 }
 
 func (this *mongoclient) GetOnIncident(definitionId string) (handler messages.OnIncident, exists bool, err error) {
