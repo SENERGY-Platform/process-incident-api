@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime/debug"
+	"slices"
 	"time"
 
 	"github.com/SENERGY-Platform/process-incident-api/lib/camunda/cache"
@@ -108,70 +109,28 @@ func (this *Camunda) GetProcessName(id string, tenantId string) (name string, er
 	return result.Name, err
 }
 
-func (this *Camunda) StartProcess(processDefinitionId string, userId string) (err error) {
-	shard, err := this.shards.EnsureShardForUser(userId)
-	if err != nil {
-		return err
-	}
-
-	parameters, err := this.getProcessParameters(shard, processDefinitionId)
-	if err != nil {
-		return err
-	}
-	if len(parameters) > 0 {
-		return errors.New("restart of processes with start-parameters not supported")
-	}
-
-	//message := createStartMessage(nil)
-
-	b := new(bytes.Buffer)
-	err = json.NewEncoder(b).Encode(map[string]interface{}{})
-	if err != nil {
-		return
-	}
-	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/submit-form", b)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-	temp, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode != http.StatusOK {
-		err = errors.New(resp.Status + " " + string(temp))
-		return err
-	}
-	return nil
+func (this *Camunda) StartProcess(processDefinitionId string, userId string, variables map[string]messages.Variable) (err error) {
+	return this.StartProcessWithBusinessKey(processDefinitionId, "", userId, variables)
 }
 
-func (this *Camunda) StartProcessWithBusinessKey(processDefinitionId string, businessKey string, userId string) (err error) {
+// StartProcessWithBusinessKey starts the definition through its start form; an empty business key is omitted.
+func (this *Camunda) StartProcessWithBusinessKey(processDefinitionId string, businessKey string, userId string, variables map[string]messages.Variable) (err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
+	return this.startProcess(shard, processDefinitionId, businessKey, variables)
+}
 
-	parameters, err := this.getProcessParameters(shard, processDefinitionId)
-	if err != nil {
-		return err
-	}
-	if len(parameters) > 0 {
-		return errors.New("restart of processes with start-parameters not supported")
-	}
-
-	message := createStartMessage(nil, businessKey)
-
+func (this *Camunda) startProcess(shard string, processDefinitionId string, businessKey string, variables map[string]messages.Variable) (err error) {
+	message := createStartMessage(variables, businessKey)
 	b := new(bytes.Buffer)
 	err = json.NewEncoder(b).Encode(message)
 	if err != nil {
-		return
+		return err
 	}
-	this.config.GetLogger().Debug("start process definition at camunda", "processDefinitionId", processDefinitionId, "message", message)
-	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/submit-form", b)
+	this.config.GetLogger().Debug("start process definition at camunda", "processDefinitionId", processDefinitionId, "businessKey", businessKey, "variables", variableNames(variables))
+	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.PathEscape(processDefinitionId)+"/submit-form", b)
 	if err != nil {
 		return err
 	}
@@ -181,50 +140,125 @@ func (this *Camunda) StartProcessWithBusinessKey(processDefinitionId string, bus
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		temp, _ := io.ReadAll(resp.Body)
-		err = errors.New(resp.Status + " " + string(temp))
-		return
+		return errors.New(resp.Status + " " + string(temp))
 	}
 	return nil
 }
 
-type Variable struct {
-	Value     interface{} `json:"value"`
-	Type      string      `json:"type"`
-	ValueInfo interface{} `json:"valueInfo"`
+type Variable = messages.Variable
+
+type StartMessage struct {
+	BusinessKey string                       `json:"businessKey,omitempty"`
+	Variables   map[string]messages.Variable `json:"variables,omitempty"`
 }
 
-func (this *Camunda) getProcessParameters(shard string, processDefinitionId string) (result map[string]Variable, err error) {
-	req, err := http.NewRequest("GET", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/form-variables", nil)
-	if err != nil {
-		return result, err
+func createStartMessage(variables map[string]messages.Variable, businessKey string) StartMessage {
+	return StartMessage{BusinessKey: businessKey, Variables: variables}
+}
+
+func variableNames(variables map[string]messages.Variable) []string {
+	result := make([]string, 0, len(variables))
+	for name := range variables {
+		result = append(result, name)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	slices.Sort(result)
+	return result
+}
+
+// GetStartVariables returns the variables a restart of the process instance has to submit to its start form,
+// or nil if the definition has no start form variables.
+func (this *Camunda) GetStartVariables(processDefinitionId string, processInstanceId string, tenantId string) (result map[string]messages.Variable, err error) {
+	shard, err := this.shards.EnsureShardForUser(tenantId)
 	if err != nil {
-		return result, err
+		return nil, err
+	}
+	return this.getStartVariables(shard, processDefinitionId, processInstanceId)
+}
+
+func (this *Camunda) getStartVariables(shard string, processDefinitionId string, processInstanceId string) (result map[string]messages.Variable, err error) {
+	formVariables, err := this.getProcessParameters(shard, processDefinitionId)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read form variables of process definition %v: %w", processDefinitionId, err)
+	}
+	if len(formVariables) == 0 {
+		return nil, nil
+	}
+	instanceVariables, runtimeErr := this.getInstanceVariables(shard, processInstanceId)
+	if runtimeErr != nil {
+		// the engine answers 500, not 404, for an instance that no longer runs
+		var historyErr error
+		instanceVariables, historyErr = this.getHistoricInstanceVariables(shard, processInstanceId)
+		if historyErr != nil {
+			return nil, fmt.Errorf("unable to read variables of process instance %v: %w", processInstanceId, errors.Join(runtimeErr, historyErr))
+		}
+	}
+	result = map[string]messages.Variable{}
+	for name := range formVariables {
+		if variable, ok := instanceVariables[name]; ok {
+			result[name] = variable
+		}
+	}
+	return result, nil
+}
+
+func (this *Camunda) getProcessParameters(shard string, processDefinitionId string) (result map[string]messages.Variable, err error) {
+	err = getJson(shard+"/engine-rest/process-definition/"+url.PathEscape(processDefinitionId)+"/form-variables", &result)
+	return result, err
+}
+
+func (this *Camunda) getInstanceVariables(shard string, processInstanceId string) (result map[string]messages.Variable, err error) {
+	err = getJson(shard+"/engine-rest/process-instance/"+url.PathEscape(processInstanceId)+"/variables?deserializeValues=false", &result)
+	return result, err
+}
+
+type HistoricVariableInstance struct {
+	Name              string          `json:"name"`
+	Type              string          `json:"type"`
+	Value             json.RawMessage `json:"value"`
+	ValueInfo         json.RawMessage `json:"valueInfo"`
+	ProcessInstanceId string          `json:"processInstanceId"`
+	ExecutionId       string          `json:"executionId"`
+	TaskId            *string         `json:"taskId"`
+}
+
+// getHistoricInstanceVariables returns the variables of the process instance scope; local variables of
+// sub-scopes and tasks are excluded because they may shadow start variables by name.
+func (this *Camunda) getHistoricInstanceVariables(shard string, processInstanceId string) (result map[string]messages.Variable, err error) {
+	list := []HistoricVariableInstance{}
+	query := url.Values{"processInstanceId": {processInstanceId}, "deserializeValues": {"false"}}
+	err = getJson(shard+"/engine-rest/history/variable-instance?"+query.Encode(), &list)
+	if err != nil {
+		return nil, err
+	}
+	// with a history level below audit the engine records no variables; an empty list is no evidence of an empty start
+	if len(list) == 0 {
+		return nil, errors.New("no historic variables recorded for process instance " + processInstanceId)
+	}
+	result = map[string]messages.Variable{}
+	for _, variable := range list {
+		if variable.ExecutionId != processInstanceId || (variable.TaskId != nil && *variable.TaskId != "") {
+			continue
+		}
+		result[variable.Name] = messages.Variable{Value: variable.Value, Type: variable.Type, ValueInfo: variable.ValueInfo}
+	}
+	return result, nil
+}
+
+func getJson(endpoint string, result interface{}) error {
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(endpoint)
+	if err != nil {
+		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		temp, _ := io.ReadAll(resp.Body)
-		err = errors.New(resp.Status + " " + string(temp))
-		return
+		return errors.New(resp.Status + " " + string(temp))
 	}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	return
-}
-
-func createStartMessage(parameter map[string]interface{}, businessKey string) map[string]interface{} {
-	if len(parameter) == 0 {
-		return map[string]interface{}{"businessKey": businessKey}
-	}
-	variables := map[string]interface{}{}
-	for key, val := range parameter {
-		variables[key] = map[string]interface{}{
-			"value": val,
-		}
-	}
-	return map[string]interface{}{"variables": variables, "businessKey": businessKey}
+	return json.NewDecoder(resp.Body).Decode(result)
 }
 
 func (this *Camunda) GetIncidents() (result []messages.CamundaIncident, err error) {

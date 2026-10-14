@@ -57,8 +57,9 @@ type CamundaFactory interface {
 type Camunda interface {
 	StopProcessInstance(id string, tenantId string) (err error)
 	GetProcessName(id string, tenantId string) (string, error)
-	StartProcess(processDefinitionId string, userId string) (err error)
-	StartProcessWithBusinessKey(processDefinitionId string, businessKey string, userId string) (err error)
+	GetStartVariables(processDefinitionId string, processInstanceId string, tenantId string) (variables map[string]messages.Variable, err error)
+	StartProcess(processDefinitionId string, userId string, variables map[string]messages.Variable) (err error)
+	StartProcessWithBusinessKey(processDefinitionId string, businessKey string, userId string, variables map[string]messages.Variable) (err error)
 	GetIncidents() (result []messages.CamundaIncident, err error)
 	GetHistoricProcessInstance(id string, userId string) (result messages.HistoricProcessInstance, err error)
 }

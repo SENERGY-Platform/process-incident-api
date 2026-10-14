@@ -16,7 +16,10 @@
 
 package messages
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type IncidentMessage = Incident
 type Incident struct {
@@ -73,4 +76,13 @@ type HistoricProcessInstance struct {
 	DeleteReason             string  `json:"deleteReason"`
 	TenantId                 string  `json:"tenantId"`
 	State                    string  `json:"state"`
+}
+
+// Variable is a process variable as the engine serializes it with deserializeValues=false.
+// Value and ValueInfo stay raw JSON so that restarting passes them back unchanged, including
+// longs beyond float64 precision and serialized objects.
+type Variable struct {
+	Value     json.RawMessage `json:"value"`
+	Type      string          `json:"type"`
+	ValueInfo json.RawMessage `json:"valueInfo,omitempty"`
 }

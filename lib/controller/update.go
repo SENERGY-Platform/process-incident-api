@@ -117,23 +117,35 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 	if err != nil {
 		return err
 	}
+	restart := registeredHandling && handling.Restart
+	var startVariables map[string]messages.Variable
+	var restartErr error
+	if restart {
+		// read before stopping, while the instance still holds its variables at runtime
+		startVariables, restartErr = this.camunda.GetStartVariables(incident.ProcessDefinitionId, incident.ProcessInstanceId, incident.TenantId)
+		if restartErr != nil {
+			restartErr = fmt.Errorf("unable to read start parameters, process not restarted: %w", restartErr)
+		}
+	}
 	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId, incident.TenantId)
 	if err != nil {
 		return err
 	}
-	if registeredHandling && handling.Restart {
-		if incident.BusinessKey != "" {
-			err = this.camunda.StartProcessWithBusinessKey(incident.ProcessDefinitionId, incident.BusinessKey, incident.TenantId)
-		} else {
-			err = this.camunda.StartProcess(incident.ProcessDefinitionId, incident.TenantId)
+	if restart {
+		if restartErr == nil {
+			if incident.BusinessKey != "" {
+				restartErr = this.camunda.StartProcessWithBusinessKey(incident.ProcessDefinitionId, incident.BusinessKey, incident.TenantId, startVariables)
+			} else {
+				restartErr = this.camunda.StartProcess(incident.ProcessDefinitionId, incident.TenantId, startVariables)
+			}
 		}
-		if err != nil {
-			this.logger.Error("unable to restart process", "snrgy-log-type", "process-incident", "error", err.Error(), "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId, "process-instance-id", incident.ProcessInstanceId)
+		if restartErr != nil {
+			this.logger.Error("unable to restart process", "snrgy-log-type", "process-incident", "error", restartErr.Error(), "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId, "process-instance-id", incident.ProcessInstanceId)
 			if incident.TenantId != "" {
 				this.Notify(notification.Message{
 					UserId:  incident.TenantId,
 					Title:   "ERROR: unable to restart process after incident in: " + incident.DeploymentName,
-					Message: fmt.Sprintf("Restart-Error: %v \n\n Incident: %v \n", err, incident.ErrorMessage),
+					Message: fmt.Sprintf("Restart-Error: %v \n\n Incident: %v \n", restartErr, incident.ErrorMessage),
 					Topic:   notification.Topic,
 				})
 			}

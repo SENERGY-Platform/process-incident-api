@@ -116,7 +116,7 @@ func TestScriptIncident(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		err = c.StartProcess(processId, "testuser")
+		err = c.StartProcess(processId, "testuser", nil)
 		if err != nil {
 			t.Error(err)
 			return
