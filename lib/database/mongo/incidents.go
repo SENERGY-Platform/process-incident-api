@@ -86,6 +86,24 @@ func (this *mongoclient) FindIncidents(externalTaskId string, processDefinitionI
 	return incidents, err
 }
 
+// lastNotifiedQuery selects the newest incident of the definition and tenant that has notified=true; stored incidents without the field do not match.
+func lastNotifiedQuery(processDefinitionId string, tenantId string) (bson.M, *options.FindOneOptions) {
+	filter := bson.M{"process_definition_id": processDefinitionId, "tenant_id": tenantId, "notified": true}
+	return filter, options.FindOne().SetSort(bson.D{{Key: "time", Value: -1}})
+}
+
+func (this *mongoclient) LastNotifiedIncident(processDefinitionId string, tenantId string) (incident messages.IncidentMessage, exists bool, err error) {
+	filter, option := lastNotifiedQuery(processDefinitionId, tenantId)
+	err = this.collection().FindOne(this.getTimeoutContext(), filter, option).Decode(&incident)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return incident, false, nil
+	}
+	if err != nil {
+		return incident, false, err
+	}
+	return incident, true, nil
+}
+
 func (this *mongoclient) SaveIncident(incident messages.Incident) error {
 	_, err := this.collection().ReplaceOne(this.getTimeoutContext(), bson.M{"id": incident.Id}, incident, options.Replace().SetUpsert(true))
 	return err

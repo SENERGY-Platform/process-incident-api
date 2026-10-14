@@ -34,6 +34,7 @@ type Incident struct {
 	TenantId            string    `json:"tenant_id" bson:"tenant_id"`
 	DeploymentName      string    `json:"deployment_name" bson:"deployment_name"`
 	BusinessKey         string    `json:"business_key" bson:"business_key"`
+	Notified            bool      `json:"notified,omitempty" bson:"notified,omitempty"` // set by the service when a user notification was sent for this incident
 }
 
 type OnIncident struct {

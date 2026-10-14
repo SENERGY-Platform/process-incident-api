@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 type mongoFields struct {
@@ -168,4 +169,57 @@ func captureStdout(t *testing.T, f func()) string {
 	f()
 	_ = w.Close()
 	return <-done
+}
+
+func TestNotificationThrottleWindow(t *testing.T) {
+	cases := []struct {
+		value    string
+		expected time.Duration
+		invalid  bool
+	}{
+		{value: "6h", expected: 6 * time.Hour},
+		{value: "90m", expected: 90 * time.Minute},
+		{value: "", expected: 0},
+		{value: "0", expected: 0},
+		{value: "0s", expected: 0},
+		{value: "soon", invalid: true},
+		{value: "6", invalid: true},
+		{value: "-1h", invalid: true},
+	}
+	for _, c := range cases {
+		window, err := Config{NotificationThrottle: c.value}.NotificationThrottleWindow()
+		if c.invalid {
+			if err == nil {
+				t.Errorf("%q: expected an error, got %v", c.value, window)
+			}
+			continue
+		}
+		if err != nil || window != c.expected {
+			t.Errorf("%q: got %v, %v, expected %v", c.value, window, err, c.expected)
+		}
+	}
+}
+
+func TestLoadConfig_NotificationThrottleDefault(t *testing.T) {
+	clearMongoEnv(t)
+	t.Setenv("NOTIFICATION_THROTTLE", "")
+	cfg, err := LoadConfig("../../config.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if window, err := cfg.NotificationThrottleWindow(); err != nil || window != 6*time.Hour {
+		t.Errorf("default window %v, %v, expected 6h", window, err)
+	}
+}
+
+func TestLoadConfig_NotificationThrottleEnv(t *testing.T) {
+	clearMongoEnv(t)
+	t.Setenv("NOTIFICATION_THROTTLE", "0")
+	cfg, err := LoadConfig("../../config.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if window, err := cfg.NotificationThrottleWindow(); err != nil || window != 0 {
+		t.Errorf("window %v, %v, expected throttling off", window, err)
+	}
 }

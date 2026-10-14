@@ -47,6 +47,7 @@ type Config struct {
 	NotificationUrl                string `json:"notification_url"`
 	DeveloperNotificationUrl       string `json:"developer_notification_url"`
 	CamundaIncidentRequestInterval string `json:"camunda_incident_request_interval"`
+	NotificationThrottle           string `json:"notification_throttle"` // Go duration; "0" or empty: notify for every incident
 
 	LogLevel string       `json:"log_level"`
 	logger   *slog.Logger `json:"-"`
@@ -64,6 +65,21 @@ func LoadConfig(location string) (config Config, err error) {
 	}
 	handleEnvironmentVars(&config)
 	return config, nil
+}
+
+// NotificationThrottleWindow parses NotificationThrottle; an empty value or a zero duration switches throttling off.
+func (this Config) NotificationThrottleWindow() (time.Duration, error) {
+	if this.NotificationThrottle == "" {
+		return 0, nil
+	}
+	window, err := time.ParseDuration(this.NotificationThrottle)
+	if err != nil {
+		return 0, fmt.Errorf("invalid notification_throttle %q: %w", this.NotificationThrottle, err)
+	}
+	if window < 0 {
+		return 0, fmt.Errorf("invalid notification_throttle %q: must not be negative", this.NotificationThrottle)
+	}
+	return window, nil
 }
 
 func isSecret(field reflect.StructField) bool {

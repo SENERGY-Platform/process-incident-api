@@ -38,6 +38,7 @@ func TestScriptIncident(t *testing.T) {
 		return
 	}
 	defaultConfig.Debug = true
+	defaultConfig.NotificationThrottle = "0" // the test counts one notification per incident of the same definition
 
 	defaultConfig.MetricsPort, err = docker.GetFreePortStr()
 	if err != nil {

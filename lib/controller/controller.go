@@ -20,6 +20,7 @@ import (
 	"context"
 	"log/slog"
 	"runtime/debug"
+	"time"
 
 	developerNotifications "github.com/SENERGY-Platform/developer-notifications/pkg/client"
 	"github.com/SENERGY-Platform/process-incident-api/lib/configuration"
@@ -36,6 +37,7 @@ type Controller struct {
 	metrics               Metric
 	devNotifications      developerNotifications.Client
 	logger                *slog.Logger
+	notificationThrottle  time.Duration
 }
 
 type Metric interface {
@@ -47,11 +49,15 @@ func New(ctx context.Context, config configuration.Config, db interfaces.Databas
 	if info, ok := debug.ReadBuildInfo(); ok {
 		logger = logger.With("go-module", info.Path)
 	}
+	throttle, err := config.NotificationThrottleWindow()
+	if err != nil {
+		return nil, err
+	}
 	c, err := cache.New(cache.Config{}) //if the worker is scaled, the l2 must be configured with a shared memcached
 	if err != nil {
 		return nil, err
 	}
-	ctrl = &Controller{config: config, camunda: camunda, db: db, metrics: m, logger: logger, handledIncidentsCache: c}
+	ctrl = &Controller{config: config, camunda: camunda, db: db, metrics: m, logger: logger, handledIncidentsCache: c, notificationThrottle: throttle}
 	if config.DeveloperNotificationUrl != "" && config.DeveloperNotificationUrl != "-" {
 		ctrl.devNotifications = developerNotifications.New(config.DeveloperNotificationUrl)
 	}

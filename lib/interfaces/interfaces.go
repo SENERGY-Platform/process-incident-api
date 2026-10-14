@@ -35,6 +35,8 @@ type Controller interface {
 type Database interface {
 	GetIncidents(id string, user string) (incident messages.IncidentMessage, exists bool, err error)
 	FindIncidents(externalTaskId string, processDefinitionId string, processInstanceId string, limit int, offset int, sortBy string, asc bool, user string) (incidents []messages.IncidentMessage, err error)
+	// LastNotifiedIncident returns the newest incident of the definition and tenant for which a user notification was sent
+	LastNotifiedIncident(processDefinitionId string, tenantId string) (incident messages.IncidentMessage, exists bool, err error)
 	DeleteByDefinitionId(id string) error
 	SaveIncident(incident messages.Incident) error
 	DeleteIncidentByInstanceId(id string) error

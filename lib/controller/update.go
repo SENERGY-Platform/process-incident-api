@@ -98,19 +98,34 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 		incident.BusinessKey = instance.BusinessKey
 	}
 
+	if incident.Time.IsZero() {
+		incident.Time = time.Now() // the throttle lookup of the next incident reads this time
+	}
+
 	this.logger.Info("process-incident", "snrgy-log-type", "process-incident", "error", incident.ErrorMessage, "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId, "process-instance-id", incident.ProcessInstanceId)
+	incident.Notified = false // set only below; a caller must not mark an incident as notified
 	if incident.TenantId != "" {
 		if !registeredHandling || handling.Notify {
-			msg := notification.Message{
-				UserId:  incident.TenantId,
-				Title:   "Process-Incident in " + incident.DeploymentName,
-				Message: incident.ErrorMessage,
-				Topic:   notification.Topic,
+			if throttled, last := this.notificationThrottled(incident); throttled {
+				// The same incident handled again keeps its mark, or saving it would erase the start of the window.
+				incident.Notified = last.Id == incident.Id
+				this.logger.Info("incident notification throttled", "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId, "last-notification-time", last.Time, "throttle", this.config.NotificationThrottle)
+			} else {
+				msg := notification.Message{
+					UserId:  incident.TenantId,
+					Title:   "Process-Incident in " + incident.DeploymentName,
+					Message: incident.ErrorMessage,
+					Topic:   notification.Topic,
+				}
+				if registeredHandling && handling.Restart {
+					msg.Message = msg.Message + "\n\nprocess will be restarted"
+				}
+				if this.notificationThrottle > 0 {
+					msg.Message = msg.Message + "\n\nfurther incidents of this process within " + this.config.NotificationThrottle + " are not notified"
+				}
+				this.Notify(msg)
+				incident.Notified = true
 			}
-			if registeredHandling && handling.Restart {
-				msg.Message = msg.Message + "\n\nprocess will be restarted"
-			}
-			this.Notify(msg)
 		}
 	}
 	err = this.db.SaveIncident(incident)
@@ -152,6 +167,29 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 		}
 	}
 	return nil
+}
+
+// notificationThrottled reports whether the last notification for the same process definition and tenant lies less
+// than the throttle window before this incident, and the incident that was notified last. Throttled incidents are not
+// marked as notified, so the window does not slide while the fault continues. A failed lookup never suppresses a
+// notification.
+func (this *Controller) notificationThrottled(incident messages.Incident) (throttled bool, last messages.Incident) {
+	if this.notificationThrottle <= 0 {
+		return false, last
+	}
+	last, exists, err := this.db.LastNotifiedIncident(incident.ProcessDefinitionId, incident.TenantId)
+	if err != nil {
+		this.logger.Warn("unable to look up the last notified incident for notification throttling", "error", err.Error(), "user", incident.TenantId, "process-definition-id", incident.ProcessDefinitionId)
+		return false, messages.Incident{}
+	}
+	if !exists || last.Time.IsZero() {
+		return false, messages.Incident{}
+	}
+	age := incident.Time.Sub(last.Time)
+	if age < 0 || age >= this.notificationThrottle {
+		return false, messages.Incident{}
+	}
+	return true, last
 }
 
 func (this *Controller) DeleteIncidentByProcessInstanceId(token string, id string) (err error, code int) {

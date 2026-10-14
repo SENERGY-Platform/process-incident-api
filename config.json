@@ -13,5 +13,6 @@
   "notification_url": "",
   "developer_notification_url": "http://api.developer-notifications:8080",
   "shards_db":"postgres://usr:pw@databasip:5432/shards?sslmode=disable",
-  "camunda_incident_request_interval": "5s"
+  "camunda_incident_request_interval": "5s",
+  "notification_throttle": "6h"
 }
