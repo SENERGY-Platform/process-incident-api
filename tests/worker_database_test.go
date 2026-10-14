@@ -53,6 +53,9 @@ func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected
 	}
 	expected.Time = time.Time{}
 	compare.Time = time.Time{}
+	// whether the incident was notified depends on the throttle and is checked in lib/controller
+	expected.Notified = false
+	compare.Notified = false
 	if !reflect.DeepEqual(expected, compare) {
 		t.Fatal(expected, compare)
 	}
@@ -84,6 +87,7 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 			return
 		}
 		incident.Time = time.Time{}
+		incident.Notified = false
 		incidents = append(incidents, incident)
 	}
 	err = cursor.Err()
