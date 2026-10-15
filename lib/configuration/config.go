@@ -33,7 +33,7 @@ import (
 
 type Config struct {
 	MetricsPort                    string `json:"metrics_port"`
-	ShardsDb                       string `json:"shards_db"`
+	ShardsDb                       string `json:"shards_db" config:"secret"`
 	MongoUrl                       string `json:"mongo_url"`  // full connection string with scheme, credentials belong in MongoUser/MongoPassword
 	MongoUser                      string `json:"mongo_user"` // empty: no authentication
 	MongoPassword                  string `json:"mongo_password" config:"secret"`

@@ -115,6 +115,22 @@ func TestLoadConfig_EnvPrintMasksMongoPassword(t *testing.T) {
 	}
 }
 
+func TestLoadConfig_EnvPrintMasksShardsDb(t *testing.T) {
+	clearMongoEnv(t)
+	t.Setenv("SHARDS_DB", "postgres://shards:s3cr3t-pw@sharding-db:5432/shards")
+	out := captureStdout(t, func() {
+		if _, err := LoadConfig("../../config.json"); err != nil {
+			t.Error(err)
+		}
+	})
+	if strings.Contains(out, "s3cr3t-pw") {
+		t.Errorf("printed environment leaks the shards db credentials: %s", out)
+	}
+	if !strings.Contains(out, "SHARDS_DB") {
+		t.Errorf("expected the applied variables to be printed, got: %s", out)
+	}
+}
+
 func TestConfigFormattingMasksMongoPassword(t *testing.T) {
 	clearMongoEnv(t)
 	t.Setenv("MONGO_PASSWORD", "s3cr3t-pw")
